@@ -38,14 +38,12 @@
 
 ## Week 4.
 
-- [ ] Implement hand upload API with authentication
 - [ ] Create hand storage and validation in backend
 - [ ] Implement real-time WebSocket notifications for new hands
-- [ ] Add position detection and auto-chart updates
 
 ### Deliverables:
 
-- Complete data flow from PokerStars → Rust client → Next.js backend
+- Complete data flow from PokerStars → Rust client → Next.js backend -> sockets -> frontend
 - Real-time position updates and chart switching
 - Hand history stored in database with proper validation
 
@@ -82,8 +80,7 @@
 - [ ] Implement repeated mistake detection and analysis
 - [ ] Create session review page with AI insights
 - [ ] Add mistake trend tracking over time
-- [ ] Implement chart comparison (user vs standard charts)
-- [ ] Build notification system for common mistakes
+- [ ] Implement chart comparison (user vs standard charts, heads up)
 
 ### Deliverables:
 
@@ -93,7 +90,7 @@
 ## Week 8.
 
 - [ ] Polish UI/UX and add visual effects (chips, cards, pot animations)
-- [ ] Implement comprehensive testing (unit, integration, E2E)
+- [ ] Implement end-to-end testing
 - [ ] Add error handling and edge case management
 - [ ] Create user onboarding and documentation
 - [ ] Prepare for deployment and production setup
@@ -101,5 +98,5 @@
 ### Deliverables:
 
 - Production-ready application with polished interface
-- Complete test coverage and documentation
+- Complete manual tests and documentation
 - Deployed application ready for beta testing
