@@ -2,6 +2,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     console.log(body);
+
     return new Response(null, { status: 204 });
   } catch (reason) {
     const message =
