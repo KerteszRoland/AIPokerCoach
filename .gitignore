@@ -1,1 +1,45 @@
 RustHandScraper/target
+
+
+# dependencies
+NextServerClient/next-server-client/node_modules
+NextServerClient/next-server-client/.pnp
+NextServerClient/next-server-client/.pnp.*
+NextServerClient/next-server-client/.yarn/*
+!NextServerClient/next-server-client/.yarn/patches
+!NextServerClient/next-server-client/.yarn/plugins
+!NextServerClient/next-server-client/.yarn/releases
+!NextServerClient/next-server-client/.yarn/versions
+
+# testing
+NextServerClient/next-server-client/coverage
+
+# next.js
+NextServerClient/next-server-client/.next/
+NextServerClient/next-server-client/out/
+
+# production
+NextServerClient/next-server-client/build
+
+# misc
+NextServerClient/next-server-client/.DS_Store
+NextServerClient/next-server-client/*.pem
+
+# debug
+NextServerClient/next-server-client/npm-debug.log*
+NextServerClient/next-server-client/yarn-debug.log*
+NextServerClient/next-server-client/yarn-error.log*
+NextServerClient/next-server-client/.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+NextServerClient/next-server-client/.env*
+
+# vercel
+NextServerClient/next-server-client/.vercel
+
+# typescript
+NextServerClient/next-server-client/*.tsbuildinfo
+NextServerClient/next-server-client/next-env.d.ts
+
+#db
+NextServerClient/next-server-client/sqlite.db
