@@ -107,3 +107,17 @@ Goal: help novice poker players improve who already know the rules and general c
 - card2: TEXT
 - text: TEXT nullable // Showdown poker hand as string
 - hand_player_id: UUID (fk)
+
+### RangeChart
+
+- id: UUID (pk)
+- type: TEXT // (rfi, frfi, 3bet)
+- for_position: TEXT // (BTN, UTG,...)
+- against_position: TEXT nullable // (BTN, UTG,...)
+
+### RangeChartHand
+
+- id: UUID (pk)
+- poker_hand_chart_id: UUID (fk)
+- hand: TEXT // (AKs)
+- action: TEXT // (raise, call, 3-bet, 4-bet)
