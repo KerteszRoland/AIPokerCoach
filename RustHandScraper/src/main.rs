@@ -455,9 +455,6 @@ impl Hand {
         let community_cards = Self::parse_community_cards(hand_str);
         let (total_pot, main_pot, side_pot, side_pot2, rake) = Self::parse_pot_and_rake(hand_str);
 
-        println!("date: {}",date);
-        println!("time: {}",time);
-
         Hand {
             id: hand_id,
             small_blind,
@@ -803,7 +800,6 @@ fn scan_for_todays_most_recent_hand(path_to_pokerstars: &str, username_wo_spaces
     let files = get_hand_files_from_folder(path_to_pokerstars, username_wo_spaces);
     let today = chrono::Local::now().date_naive();
     let today_str = today.format("%Y%m%d").to_string();
-    println!("Today: {}", today_str);
 
     let today_files: Vec<_> = files.into_iter().filter_map(|file_result| {
         let entry = file_result.ok()?; // Handle Result, skip if Err
@@ -821,8 +817,6 @@ fn scan_for_todays_most_recent_hand(path_to_pokerstars: &str, username_wo_spaces
         }
         None // Skip this file
     }).collect();
-
-    println!("Today files: {}", today_files.len());
 
 
     let last_hand = today_files.iter().map(|file| 
