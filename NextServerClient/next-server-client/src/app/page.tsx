@@ -1,5 +1,5 @@
 import HandSocket from "./components/client/HandSocket";
-import PokerHandChart from "./components/server/PokerHandChart";
+import PokerHandChart from "./components/client/PokerHandChart";
 import getMostRecentHand from "./serverUtils/getMostRecentHand";
 
 export const metadata = {
