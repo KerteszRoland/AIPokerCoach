@@ -1,4 +1,7 @@
-# AIPokerCoach
+<div align="center">
+  <img src="./RustHandScraper/src/assets/icon_running.png" width="128" height="128" alt="AI Poker Coach">
+  <h1>AI Poker Coach</h1>
+</div>
 
 Goal: help novice poker players improve who already know the rules and general concepts at micro stakes
 (rules, hands, positions)
