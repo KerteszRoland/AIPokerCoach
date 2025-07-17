@@ -38,3 +38,65 @@ Goal: help novice poker players improve who already know the rules and general c
 6. Notify: The backend pushes a "new hand" event via WebSockets.
 7. Update: The Next.js frontend, listening to the WebSocket, receives the event and updates the UI (e.g., a notification pops up, updates the charts).
 8. Review: The user navigates to the session review page. The frontend calls the backend API, which may in turn call the Gemini API to generate a qualitative summary of the aggregated mistakes.
+
+## Database schemas
+
+### Hands
+
+- id: UUID (pk)
+- poker_client_hand_id: TEXT
+- date: TEXT
+- time: TEXT
+- table_name: TEXT
+- small_blind: REAL
+- max_players: INTEGER
+- dealer_seat: INTEGER
+- players: populate from Table HandPlayers
+- actions: populate from Table Actions
+- community_cards: populate from CommunityCards
+- total_pot: REAL
+- main_pot: REAL
+- side_pot: REAL
+- side_pot2: REAL
+- rake: REAL
+- created_at: TEXT
+
+### HandPlayers
+
+- id: UUID (pk)
+- hand_id: UUID (fk)
+- seat: INTEGER
+- position: TEXT
+- name: TEXT
+- chips: REAL
+- is_sitting_out: BOOLEAN
+- is_hero: BOOLEAN
+
+### HandPlayerCards
+
+- hand_player_id: UUID (pk, fk)
+- card1: TEXT
+- card2: TEXT
+
+### CommunityCards
+
+- hand_id: UUID (pk, fk)
+- flop1: TEXT
+- flop2: TEXT
+- flop3: TEXT
+- turn: TEXT
+- river: TEXT
+
+### Actions
+
+- id: UUID (pk)
+- hand_id: UUID (fk)
+- street: INTEGER // (pre=0, preflop=1, flop=2, turn=3, river=3, showdown=4)
+- sequence: INTEGER
+- name: TEXT
+- amount: REAL nullable
+- amount2: REAL nullable // amount to when raising
+- card1: TEXT
+- card2: TEXT
+- text: TEXT nullable // Showdown poker hand as string
+- hand_player_id: UUID (fk)
