@@ -21,6 +21,10 @@ Goal: help novice poker players improve who already know the rules and general c
 - Generates your own preflop charts based on your hand history (compare to "standard" chart)
 - AI analyzes your repeated mistakes that came up a lot
 
+## Wireframe design
+
+![Poker UI Design](pokeraiUI.png)
+
 ## Tech stack:
 
 - Rust client that scrapes PokerStars hand history and uploads it to server
