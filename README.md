@@ -26,7 +26,7 @@ Goal: help novice poker players improve who already know the rules and general c
 - Rust client that scrapes PokerStars hand history and uploads it to server
 - Next.js frontend/backend that displays the analysis, updates the charts via sockets.
 - Gemini for AI text analysis summary (previous hand, session, repeated mistakes)
-- SQLlite database on server for storage (hands, charts, etc)
+- SQLlite database via DrizzleORM on server for storage (hands, charts, etc)
 
 ## Data Flow Summary
 
