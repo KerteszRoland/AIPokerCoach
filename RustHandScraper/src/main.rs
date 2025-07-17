@@ -1,6 +1,10 @@
-use std::fs;
+use std::{fs::{self, DirEntry}, io::Error, thread, sync::mpsc};
 use regex::Regex;
 use reqwest;
+use tray_icon::{TrayIconBuilder, Icon, menu::{Menu, CheckMenuItem, MenuItem, MenuEvent}, TrayIconEvent};
+#[cfg(target_os = "linux")]
+use gtk;
+use tokio::time::{sleep, Duration};
 
 #[derive(Debug, Clone)]
 enum Position {
@@ -358,18 +362,20 @@ struct Hand {
     turn_actions: Vec<PlayerAction>,
     river_actions: Vec<PlayerAction>,
     show_down_actions: Vec<PlayerAction>,
-    player_cards: Vec<String>,
-    player_name: String,
+    hero_cards: Vec<String>,
+    hero_name: String,
     community_cards: Vec<String>,
     total_pot: f32,
     main_pot: f32,
-    side_pots: Vec<f32>,
+    side_pot: f32,
+    side_pot2: f32,
     rake: f32,
 }
 
 impl Hand {
-    fn from_str(hand_str: &str, player_name: &str) -> Self {
-        println!("hand_str: {}", hand_str);
+    fn from_str(hand_str: &str) -> Self {
+        //println!("hand_str: {}", hand_str);
+
         let re = regex::Regex::new(r"PokerStars Hand #(\d+):\s+.+?\(\$(\d+\.\d+)\/\$(\d+\.\d+) USD\) - (\d{4}/\d{2}/\d{2} \d{1,2}:\d{2}:\d{2}) CET \[\d{4}/\d{2}/\d{2} \d{1,2}:\d{2}:\d{2} ET\]").unwrap();
         let re2 = regex::Regex::new(r"Table '(.+?)' (\d+)-max Seat #(\d+) is the button").unwrap();
         
@@ -444,10 +450,13 @@ impl Hand {
 
         let players = Self::parse_players(hand_str, dealer_seat);
         let pre_actions = Self::parse_pre_actions(hand_str);
-        let player_cards = Self::parse_player_cards(hand_str);
+        let (hero_cards, hero_name) = Self::parse_hero_cards_and_name(hand_str);
        
         let community_cards = Self::parse_community_cards(hand_str);
-        let (total_pot, main_pot, side_pots, rake) = Self::parse_pot_and_rake(hand_str);
+        let (total_pot, main_pot, side_pot, side_pot2, rake) = Self::parse_pot_and_rake(hand_str);
+
+        println!("date: {}",date);
+        println!("time: {}",time);
 
         Hand {
             id: hand_id,
@@ -457,10 +466,10 @@ impl Hand {
             table_name,
             max_players,
             dealer_seat,
-            player_name: player_name.to_string(),
+            hero_name: hero_name.to_string(),
             players,
             pre_actions,
-            player_cards,
+            hero_cards,
             preflop_actions,
             flop_actions,
             turn_actions,
@@ -469,7 +478,8 @@ impl Hand {
             community_cards,
             total_pot,
             main_pot,
-            side_pots,
+            side_pot,
+            side_pot2,
             rake,
         }
     }
@@ -547,14 +557,12 @@ impl Hand {
         pre_actions
     }
 
-    fn parse_player_cards(hand_str: &str) -> Vec<String> {
-        let mut player_cards = Vec::new();
-        
+    fn parse_hero_cards_and_name(hand_str: &str) -> (Vec<String>, String) {
         let playerhands_re = Regex::new(r"Dealt to (.+?) \[([2-9TJQKA][cdhs]) ([2-9TJQKA][cdhs])\]").unwrap();
         let playerhands_caps = playerhands_re.captures(hand_str).unwrap();
-        player_cards.push(playerhands_caps.get(2).unwrap().as_str().to_string());
-        player_cards.push(playerhands_caps.get(3).unwrap().as_str().to_string());
-        player_cards
+        let hero_name = playerhands_caps.get(1).unwrap().as_str().to_string();
+        let hero_cards = vec![playerhands_caps.get(2).unwrap().as_str().to_string(), playerhands_caps.get(3).unwrap().as_str().to_string()];
+        (hero_cards, hero_name)
     }
 
     fn parse_community_cards(hand_str: &str) -> Vec<String> {
@@ -641,28 +649,28 @@ impl Hand {
         show_down_actions
     }
 
-    fn parse_pot_and_rake(hand_str: &str) -> (f32, f32, Vec<f32>, f32) {
+    fn parse_pot_and_rake(hand_str: &str) -> (f32, f32, f32, f32, f32) {
         let pot_re = Regex::new(r"Total pot \$([0-9.]+)(?:\s+Main pot \$([0-9.]+)\.\s+Side pot \$([0-9.]+)\.)? \| Rake \$([0-9.]+)").unwrap();
         let pot_re_caps = pot_re.captures(hand_str).unwrap();
 
         let total_pot = pot_re_caps.get(1).unwrap().as_str().parse::<f32>().unwrap();
         let rake = pot_re_caps.get(4).unwrap().as_str().parse::<f32>().unwrap();
 
-        let (main_pot, side_pots) = if let Some(main_pot_cap) = pot_re_caps.get(2) {
+        let (main_pot, side_pot, side_pot2) = if let Some(main_pot_cap) = pot_re_caps.get(2) {
             let main_pot = main_pot_cap.as_str().parse::<f32>().unwrap();
             let side_pot = pot_re_caps.get(3).map(|cap| cap.as_str().trim_end_matches('.').parse::<f32>().unwrap());
-            (main_pot, side_pot.map(|sp| vec![sp]).unwrap_or_default())
+            let side_pot2: Option<f32> = Some(0.0);
+            (main_pot, side_pot.unwrap_or(0.0), side_pot2.unwrap_or(0.0))
         } else {
-            return (total_pot, total_pot, Vec::new(), rake);
+            return (total_pot, total_pot, 0.0, 0.0, rake);
         };
 
-        (total_pot, main_pot, side_pots, rake)
+        (total_pot, main_pot, side_pot, side_pot2, rake)
     }
-
 
     fn to_json(&self) -> String {
         format!(
-            "{{\"id\":\"{}\",\"date\":\"{}\",\"time\":\"{}\",\"table_name\":\"{}\",\"small_blind\":{},\"max_players\":{},\"dealer_seat\":{},\"players\":[{}],\"pre_actions\":[{}],\"preflop_actions\":[{}],\"flop_actions\":[{}],\"turn_actions\":[{}],\"river_actions\":[{}],\"show_down_actions\":[{}],\"player_cards\":[{}],\"player_name\":\"{}\",\"community_cards\":[{}],\"total_pot\":{},\"main_pot\":{},\"side_pots\":[{}],\"rake\":{}}}",
+            "{{\"id\":\"{}\",\"date\":\"{}\",\"time\":\"{}\",\"table_name\":\"{}\",\"small_blind\":{},\"max_players\":{},\"dealer_seat\":{},\"players\":[{}],\"pre_actions\":[{}],\"preflop_actions\":[{}],\"flop_actions\":[{}],\"turn_actions\":[{}],\"river_actions\":[{}],\"show_down_actions\":[{}],\"hero_cards\":[{}],\"hero_name\":\"{}\",\"community_cards\":[{}],\"total_pot\":{},\"main_pot\":{},\"side_pot\":{},\"side_pot2\":{},\"rake\":{}}}",
             self.id.replace("\"", "\\\""),
             self.date.replace("\"", "\\\""),
             self.time.replace("\"", "\\\""),
@@ -677,15 +685,150 @@ impl Hand {
             self.turn_actions.iter().map(|a| a.to_json()).collect::<Vec<_>>().join(","),
             self.river_actions.iter().map(|a| a.to_json()).collect::<Vec<_>>().join(","),
             self.show_down_actions.iter().map(|a| a.to_json()).collect::<Vec<_>>().join(","),
-            self.player_cards.iter().map(|c| format!("\"{}\"", c)).collect::<Vec<_>>().join(","),
-            self.player_name.replace("\"", "\\\""),
+            self.hero_cards.iter().map(|c| format!("\"{}\"", c)).collect::<Vec<_>>().join(","),
+            self.hero_name.replace("\"", "\\\""),
             self.community_cards.iter().map(|c| format!("\"{}\"", c)).collect::<Vec<_>>().join(","),
             self.total_pot,
             self.main_pot,
-            self.side_pots.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(","),
+            self.side_pot,
+            self.side_pot2,
             self.rake
         )
     }
+
+    fn print(&self) {
+        println!("ID: {}", self.id);
+        println!("Date: {}", self.date);
+        println!("Time: {}", self.time);
+        println!("Table Name: {}", self.table_name);
+        println!("Small Blind: {}", self.small_blind);
+        println!("Max Players: {}", self.max_players);
+        println!("Dealer Position: {}", self.dealer_seat);
+        
+        println!("\nPlayers:");
+        for player in &self.players {
+            player.print();
+        }
+        
+        println!("\nPre-actions:");
+        for action in &self.pre_actions {
+            action.print();
+        }
+    
+        println!("\nPlayer Cards:");
+        println!("{}: {} {}", self.hero_name, self.hero_cards[0], self.hero_cards[1]);
+    
+        println!("\nPreflop Actions:");
+        for action in &self.preflop_actions {
+            action.print();
+        }
+    
+        print!("\nCommunity Cards: ");
+        for card in &self.community_cards[0..3] {
+            print!("{} ", card);
+        }
+        println!();
+    
+        println!("\nFlop Actions:");
+        for action in &self.flop_actions {
+            action.print();
+        }
+        
+        print!("\nCommunity Cards: ");
+        for card in &self.community_cards[0..4] {
+            print!("{} ", card);
+        }
+        println!();
+    
+        println!("\nTurn Actions:");
+        for action in &self.turn_actions {
+            action.print();
+        }
+    
+        print!("\nCommunity Cards: ");
+        for card in &self.community_cards[0..5] {
+            print!("{} ", card);
+        }
+        println!();
+    
+        println!("\nRiver Actions:");
+        for action in &self.river_actions {
+            action.print();
+        }
+    
+        println!("\nShow Down Actions:");
+        for action in &self.show_down_actions {
+            action.print();
+        }
+    
+        println!("\nTotal pot: ${:.2} | Main pot: ${:.2} | Side pot: ${:.2} | Side pot 2: ${:.2} | Rake: ${:.2}", self.total_pot, self.main_pot, self.side_pot, self.side_pot2, self.rake);
+    
+    }
+}
+
+fn get_hand_files_from_folder(path_to_pokerstars: &str, username_wo_spaces: &str) -> Vec<Result<DirEntry, Error>> {
+    let hands_folder = format!("{}\\HandHistory\\{}", path_to_pokerstars, username_wo_spaces);
+    //let files = vec![fs::read_dir(hands_folder).unwrap().next().unwrap()]; // only parse the first file
+    let files = fs::read_dir(hands_folder).unwrap().collect::<Vec<_>>();
+    files
+}
+
+fn get_hands_from_file(file_path: &str) -> Vec<Hand> {
+    let mut all_hands = Vec::new();
+    let contents = fs::read_to_string(file_path).unwrap();
+    //let hands: Vec<&str> = vec![contents.split("\r\n\r\n\r\n").collect::<Vec<&str>>().first().unwrap()]; // only parse the first hand
+    let hands: Vec<&str> = contents.split("\r\n\r\n\r\n").collect();
+    for hand_str in hands {
+        let is_tournament = (hand_str.lines().find(|line| line.contains("Tournament #"))).is_some();
+        if !hand_str.trim().is_empty() && !is_tournament {
+            let hand = Hand::from_str(hand_str);
+            all_hands.push(hand);
+        }
+    }
+    all_hands
+}
+
+fn get_last_hand_from_file(file_path: &str) -> Hand {
+    let contents = fs::read_to_string(file_path).unwrap();
+    let last_hand_str = "PokerStars Hand".to_string()+contents.split("PokerStars Hand").last().unwrap();
+    let hand = Hand::from_str(last_hand_str.as_str());
+    hand
+}
+
+fn get_hand_by_id(all_hands: &Vec<Hand>, id: &str) -> Option<Hand> {
+    all_hands.iter().find(|hand| hand.id == id).cloned()
+}
+
+fn scan_for_todays_most_recent_hand(path_to_pokerstars: &str, username_wo_spaces: &str) -> Option<Hand> {
+    let files = get_hand_files_from_folder(path_to_pokerstars, username_wo_spaces);
+    let today = chrono::Local::now().date_naive();
+    let today_str = today.format("%Y%m%d").to_string();
+    println!("Today: {}", today_str);
+
+    let today_files: Vec<_> = files.into_iter().filter_map(|file_result| {
+        let entry = file_result.ok()?; // Handle Result, skip if Err
+        let file_name = entry.file_name();
+        let file_modified_at = entry.metadata().unwrap().modified().unwrap();
+        
+        // Convert SystemTime to date string for comparison
+        let file_modified_date = chrono::DateTime::<chrono::Local>::from(file_modified_at)
+            .date_naive()
+            .format("%Y%m%d")
+            .to_string();
+
+        if file_modified_date == today_str {
+            return Some(entry); // Keep this DirEntry
+        }
+        None // Skip this file
+    }).collect();
+
+    println!("Today files: {}", today_files.len());
+
+
+    let last_hand = today_files.iter().map(|file| 
+        get_last_hand_from_file(file.path().to_str().unwrap()))
+        .max_by_key(|hand| chrono::NaiveDateTime::parse_from_str(&format!("{} {}", hand.date, hand.time), "%Y/%m/%d %H:%M:%S").unwrap());
+    last_hand
 }
 
 async fn send_hand_to_server(hand: Hand) {
@@ -708,98 +851,196 @@ async fn send_hand_to_server(hand: Hand) {
     }
 }
 
+#[derive(Debug)]
+enum TrayCommand {
+    SetPaused(bool),
+    SetError(Option<String>),
+}
+
+#[derive(Debug)]
+enum AppCommand {
+    TogglePause,
+    Exit,
+}
+
+fn create_tray_thread() -> (mpsc::Sender<TrayCommand>, mpsc::Receiver<AppCommand>) {
+    let (tray_tx, tray_rx) = mpsc::channel::<TrayCommand>();
+    let (app_tx, app_rx) = mpsc::channel::<AppCommand>();
+
+    thread::spawn(move || {
+        #[cfg(target_os = "linux")]
+        gtk::init().expect("Failed to initialize GTK.");
+
+        let icon_running = load_icon(std::path::Path::new("./assets/icon_running.png"));
+        let icon_paused = load_icon(std::path::Path::new("./assets/icon_paused.png"));
+        let icon_error = load_icon(std::path::Path::new("./assets/icon_error.png"));
+
+        let paused = MenuItem::new("Pause", true, None);
+        let exit_item = MenuItem::new("Exit", true, None);
+
+        let inner_menu = Menu::new();
+        let _ = inner_menu.append(&paused);
+        let _ = inner_menu.append(&exit_item);
+
+        let tray = TrayIconBuilder::new()
+            .with_menu(Box::new(inner_menu))
+            .with_tooltip("AI Poker Coach - Running")
+            .with_icon(icon_running.clone())
+            .build()
+            .unwrap();
+
+        let menu_channel = MenuEvent::receiver();
+        let tray_channel = TrayIconEvent::receiver();
+        let mut is_paused = false;
+        let mut error: Option<String> = None;
+
+        loop {
+
+            #[cfg(target_os = "linux")]
+            gtk::main_iteration_do(false);
+
+            // Windows message pumping for proper tray icon handling
+            #[cfg(target_os = "windows")]
+            {
+                use std::mem;
+                use std::ptr;
+                // Simple message pump to ensure Windows messages are processed
+                unsafe {
+                    let mut msg: winapi::um::winuser::MSG = mem::zeroed();
+                    while winapi::um::winuser::PeekMessageW(&mut msg, ptr::null_mut(), 0, 0, winapi::um::winuser::PM_REMOVE) != 0 {
+                        winapi::um::winuser::TranslateMessage(&msg);
+                        winapi::um::winuser::DispatchMessageW(&msg);
+                    }
+                }
+            }
+
+            // Handle tray icon events (clicks)
+            if let Ok(_event) = tray_channel.try_recv() {
+                // Tray icon clicked - could add functionality here if needed
+            }
+
+            // Handle menu events
+            if let Ok(event) = menu_channel.try_recv() {
+                if event.id() == paused.id() {
+                    is_paused = !is_paused;
+                    paused.set_text(if is_paused { "Resume" } else { "Pause" });
+                    println!("Toggled pause state to: {}", is_paused);
+                    app_tx.send(AppCommand::TogglePause).ok();
+                } else if event.id() == exit_item.id() {
+                    println!("Exit requested");
+                    app_tx.send(AppCommand::Exit).ok();
+                    return;
+                }
+            }
+
+            // Handle commands from main thread
+            while let Ok(cmd) = tray_rx.try_recv() {
+                match cmd {
+                    TrayCommand::SetPaused(paused_state) => {
+                        is_paused = paused_state;
+                        paused.set_text(if is_paused { "Resume" } else { "Pause" });
+                    }
+                    TrayCommand::SetError(err) => {
+                        error = err;
+                    }
+                }
+            }
+
+            // Update tray status
+            let status = if let Some(ref e) = error {
+                format!("Error: {}", e)
+            } else if is_paused {
+                "Paused".to_string()
+            } else {
+                "Running".to_string()
+            };
+
+            tray.set_tooltip(Some(&format!("AI Poker Coach - {}", status))).ok();
+
+            let current_icon = if error.is_some() {
+                icon_error.clone()
+            } else if is_paused {
+                icon_paused.clone()
+            } else {
+                icon_running.clone()
+            };
+
+            tray.set_icon(Some(current_icon)).ok();
+
+            thread::sleep(std::time::Duration::from_millis(50));
+        }
+    });
+
+    (tray_tx, app_rx)
+}
+
 #[tokio::main]
 async fn main() {
-    let username = "LakatosJózsef";
-    let path_to_pokerstars = "C:\\Users\\kerte\\AppData\\Local\\PokerStars";
-    let hands_folder = format!("{}\\HandHistory\\{}", path_to_pokerstars, username);
+    let (tray_tx, app_rx) = create_tray_thread();
 
-    let mut all_hands = Vec::new();
+    let mut last_hand_id: Option<String> = None;
+    let mut error: Option<String> = None;
+    let mut is_paused = false;
 
-    let files = vec![fs::read_dir(hands_folder).unwrap().next().unwrap()]; // only parse the first file
-    //let files = fs::read_dir(hands_folder).unwrap(); // only parse the first file
+    println!("Scanning for new hands...");
 
-    for file in files {
-        let file_path = file.unwrap().path();
-        let contents = fs::read_to_string(file_path).unwrap();
-        let hands: Vec<&str> = vec![contents.split("\r\n\r\n\r\n").collect::<Vec<&str>>().first().unwrap()]; // only parse the first hand
-        //let hands: Vec<&str> = contents.split("\r\n\r\n\r\n").collect();
-        for hand_str in hands {
-            let is_tournament = (hand_str.lines().find(|line| line.contains("Tournament #"))).is_some();
-            if !hand_str.trim().is_empty() && !is_tournament {
-                let hand = Hand::from_str(hand_str, username);
-                all_hands.push(hand);
+    loop {
+        // Handle commands from tray thread
+        while let Ok(cmd) = app_rx.try_recv() {
+            match cmd {
+                AppCommand::TogglePause => {
+                    is_paused = !is_paused;
+                    println!("Main: Pause state changed to: {}", is_paused);
+                }
+                AppCommand::Exit => {
+                    println!("Main: Exit requested");
+                    return;
+                }
             }
         }
-    }
 
-    let hand = all_hands.first().unwrap();
-    println!("ID: {}", hand.id);
-    println!("Date: {}", hand.date);
-    println!("Time: {}", hand.time);
-    println!("Table Name: {}", hand.table_name);
-    println!("Small Blind: {}", hand.small_blind);
-    println!("Max Players: {}", hand.max_players);
-    println!("Dealer Position: {}", hand.dealer_seat);
-    
-    println!("\nPlayers:");
-    for player in &hand.players {
-        player.print();
-    }
-    
-    println!("\nPre-actions:");
-    for action in &hand.pre_actions {
-        action.print();
-    }
+        if !is_paused {
+            match scan_for_todays_most_recent_hand("C:\\Users\\kerte\\AppData\\Local\\PokerStars", "LakatosJózsef") {
+                Some(hand) => {
+                    if let Some(ref last_id) = last_hand_id {
+                        if *last_id != hand.id {
+                            println!("Found new hand: {}", hand.id);
+                            send_hand_to_server(hand.clone()).await;
+                            println!("Hand sent to server:");
+                            println!("{}", hand.to_json());
+                            last_hand_id = Some(hand.id.clone());
+                        }
+                    } else {
+                        println!("Found first hand: {}", hand.id);
+                        send_hand_to_server(hand.clone()).await;
+                        println!("Hand sent to server:");
+                        println!("{}", hand.to_json());
+                        last_hand_id = Some(hand.id.clone());
+                    }
+                    error = None;
+                }
+                None => {
+                    error = None;
+                }
+            }
+        }
 
-    println!("\nPlayer Cards:");
-    println!("{}: {} {}", hand.player_name, hand.player_cards[0], hand.player_cards[1]);
+        // Send status updates to tray thread
+        tray_tx.send(TrayCommand::SetPaused(is_paused)).ok();
+        tray_tx.send(TrayCommand::SetError(error.clone())).ok();
 
-    println!("\nPreflop Actions:");
-    for action in &hand.preflop_actions {
-        action.print();
+        sleep(Duration::from_secs(3)).await;
     }
+}
 
-    print!("\nCommunity Cards: ");
-    for card in &hand.community_cards[0..3] {
-        print!("{} ", card);
-    }
-    println!();
-
-    println!("\nFlop Actions:");
-    for action in &hand.flop_actions {
-        action.print();
-    }
-    
-    print!("\nCommunity Cards: ");
-    for card in &hand.community_cards[0..4] {
-        print!("{} ", card);
-    }
-    println!();
-
-    println!("\nTurn Actions:");
-    for action in &hand.turn_actions {
-        action.print();
-    }
-
-    print!("\nCommunity Cards: ");
-    for card in &hand.community_cards[0..5] {
-        print!("{} ", card);
-    }
-    println!();
-
-    println!("\nRiver Actions:");
-    for action in &hand.river_actions {
-        action.print();
-    }
-
-    println!("\nShow Down Actions:");
-    for action in &hand.show_down_actions {
-        action.print();
-    }
-
-    println!("\nTotal pot: ${:.2} | Main pot: ${:.2} | Side pots: ${:.2} | Rake: ${:.2}", hand.total_pot, hand.main_pot, hand.side_pots.iter().sum::<f32>(), hand.rake);
-
-    // Send the first hand to the server
-    send_hand_to_server(hand.clone()).await;
+fn load_icon(path: &std::path::Path) -> tray_icon::Icon {
+    let (icon_rgba, icon_width, icon_height) = {
+        let image = image::open(path)
+            .expect("Failed to open icon path")
+            .into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+    tray_icon::Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
 }
