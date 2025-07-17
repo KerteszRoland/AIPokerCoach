@@ -1,11 +1,5 @@
 import HandSocket from "./components/client/HandSocket";
-import PokerHandChart from "./components/client/PokerHandChart";
-import getMostRecentHand from "./serverUtils/getMostRecentHand";
-
-export const metadata = {
-  title: "AI Poker Coach",
-  description: "Help you improve your poker skills with the power of AI.",
-};
+import { getMostRecentHand } from "./serverUtils/serverRequests/hand";
 
 export default async function Home() {
   const hand = await getMostRecentHand();
@@ -17,7 +11,7 @@ export default async function Home() {
         <p className="text-lg">
           Help you improve your poker skills with the power of AI.
         </p>
-        <PokerHandChart />
+
         {hand && <HandSocket initialHand={hand} />}
       </main>
     </div>

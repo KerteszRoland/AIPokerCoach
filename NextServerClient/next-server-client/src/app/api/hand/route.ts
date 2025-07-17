@@ -1,9 +1,9 @@
 import { handJsonToDb } from "@/app/serverUtils/handJsonToDb";
 import db from "@/app/serverUtils/db";
-import { Hands, Actions } from "@/db/schema";
-import { asc, desc, eq } from "drizzle-orm";
-import getMostRecentHand from "@/app/serverUtils/getMostRecentHand";
+import { Hands } from "@/db/schema";
+import { getMostRecentHand } from "@/app/serverUtils/serverRequests/hand";
 import { notifyNewHand } from "@/app/serverUtils/sse";
+import { eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
   try {

@@ -7,7 +7,6 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
-// Hands table
 export const Hands = sqliteTable("hands", {
   id: text("id").primaryKey(), // UUID as text
   pokerClientHandId: text("poker_client_hand_id"),
@@ -25,7 +24,6 @@ export const Hands = sqliteTable("hands", {
   createdAt: text("created_at").notNull(),
 });
 
-// HandPlayers table
 export const HandPlayers = sqliteTable(
   "hand_players",
   {
@@ -45,7 +43,6 @@ export const HandPlayers = sqliteTable(
   (table) => [index("hand_players_hand_id_idx").on(table.handId)]
 );
 
-// HandPlayerCards table
 export const HandPlayerCards = sqliteTable("hand_player_cards", {
   handPlayerId: text("hand_player_id")
     .primaryKey()
@@ -54,7 +51,6 @@ export const HandPlayerCards = sqliteTable("hand_player_cards", {
   card2: text("card2").notNull(),
 });
 
-// CommunityCards table
 export const CommunityCards = sqliteTable("community_cards", {
   handId: text("hand_id")
     .primaryKey()
@@ -66,7 +62,6 @@ export const CommunityCards = sqliteTable("community_cards", {
   river: text("river"),
 });
 
-// Actions table
 export const Actions = sqliteTable(
   "actions",
   {
@@ -92,7 +87,24 @@ export const Actions = sqliteTable(
   ]
 );
 
-// Relations
+export const RangeCharts = sqliteTable("range_charts", {
+  id: text("id").primaryKey(), // UUID as text
+  type: text("type").notNull(), // (rfi, frfi, 3bet)
+  forPosition: text("for_position").notNull(), // (BTN, UTG)
+  againstPosition: text("against_position"), // (BTN, UTG)
+});
+
+export const RangeChartHands = sqliteTable("range_chart_hands", {
+  id: text("id").primaryKey(), // UUID as text
+  rangeChartId: text("range_chart_id")
+    .notNull()
+    .references(() => RangeCharts.id, { onDelete: "cascade" }),
+  hand: text("hand").notNull(), // (AKs)
+  action: text("action").notNull(), // (raise, call, 3-bet, 4-bet)
+});
+
+// Relations ////////////////////////////////////////////////////////////////
+
 export const handsRelations = relations(Hands, ({ many, one }) => ({
   players: many(HandPlayers),
   actions: many(Actions),
@@ -141,3 +153,17 @@ export const actionsRelations = relations(Actions, ({ one }) => ({
     references: [HandPlayers.id],
   }),
 }));
+
+export const RangeChartRelations = relations(RangeCharts, ({ many }) => ({
+  hands: many(RangeChartHands),
+}));
+
+export const RangeChartHandRelations = relations(
+  RangeChartHands,
+  ({ one }) => ({
+    chart: one(RangeCharts, {
+      fields: [RangeChartHands.rangeChartId],
+      references: [RangeCharts.id],
+    }),
+  })
+);

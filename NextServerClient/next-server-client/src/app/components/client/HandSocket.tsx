@@ -1,37 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { HandFull } from "@/app/serverUtils/getMostRecentHand";
+import { HandFull } from "@/app/serverUtils/serverRequests/hand";
+import { useRecentHandViaSocket } from "@/app/hooks/useRecentHandViaSocket";
 
 export default function HandSocket({ initialHand }: { initialHand: HandFull }) {
-  const [hand, setHand] = useState(initialHand);
-
-  const fetchHand = async () => {
-    const res = await fetch("/api/hand");
-    if (res.ok) {
-      const data = await res.json();
-      setHand(data);
-    }
-  };
-
-  useEffect(() => {
-    const eventSource = new EventSource("/api/events");
-    eventSource.onmessage = (event) => {
-      try {
-        console.log("event.data", event.data);
-        const msg = JSON.parse(event.data);
-        if (msg.type === "new-hand") {
-          fetchHand();
-        }
-      } catch (error) {
-        console.error("Error parsing SSE message:", error);
-      }
-    };
-    return () => {
-      eventSource.close();
-      console.log("eventSource closed");
-    };
-  }, []);
+  const { hand, loading, error } = useRecentHandViaSocket({ initialHand });
 
   const heroCards = hand.players.find((p) => p.isHero)?.cards;
 
