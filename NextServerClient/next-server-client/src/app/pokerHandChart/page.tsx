@@ -1,8 +1,12 @@
+/*
 import { getRangeCharts } from "@/app/serverUtils/serverRequests/chart";
 import PokerHandChart from "../components/client/PokerHandChart";
 import Button from "../components/client/Button";
+*/
 
 export default async function PokerHandChartPage() {
+  return <div>PokerHandChartPage</div>;
+  /*
   const { charts, total } = await getRangeCharts();
   return (
     <div className="flex flex-col items-center gap-4">
@@ -36,4 +40,5 @@ export default async function PokerHandChartPage() {
       </div>
     </div>
   );
+  */
 }

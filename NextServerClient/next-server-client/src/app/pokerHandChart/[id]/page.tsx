@@ -1,6 +1,8 @@
+/*
 import { getRangeChartById } from "@/app/serverUtils/serverRequests/chart";
 import PokerHandChart from "@/app/components/client/PokerHandChart";
 import Button from "@/app/components/client/Button";
+*/
 
 export default async function PokerHandChartPage({
   params,
@@ -8,6 +10,8 @@ export default async function PokerHandChartPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  return <div>PokerHandChartPage {id}</div>;
+  /*
   const fullChart = await getRangeChartById({ id });
   if (!fullChart) {
     return <div>Chart not found</div>;
@@ -31,4 +35,5 @@ export default async function PokerHandChartPage({
       <PokerHandChart value={fullChart.hands} />
     </div>
   );
+  */
 }

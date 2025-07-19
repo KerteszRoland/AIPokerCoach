@@ -1,10 +1,14 @@
+/*
 import Card from "./components/server/Card";
 import { getMostRecentHand } from "./serverUtils/serverRequests/hand";
 import { FaUser } from "react-icons/fa";
 import LiveRangeChart from "./components/client/LiveRangeChart";
 import PreviousRoundsCard from "./components/client/PreviousRoundsCard";
+*/
 
 export default async function Home() {
+  return <div>Hello</div>;
+  /*
   const hand = await getMostRecentHand();
 
   if (!hand) {
@@ -24,8 +28,10 @@ export default async function Home() {
       </main>
     </div>
   );
+  */
 }
 
+/*
 function CoachReviewCard() {
   return (
     <Card>
@@ -45,3 +51,4 @@ function CoachReviewCard() {
     </Card>
   );
 }
+*/
