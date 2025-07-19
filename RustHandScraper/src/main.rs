@@ -60,6 +60,7 @@ struct Player {
     position: Option<Position>,
     name: String,
     chips: f32,
+    chips_after_hand: f32,
     is_sitting_out: bool,
 }
 
@@ -71,7 +72,7 @@ impl Player {
 
     fn to_json(&self) -> String {
         format!(
-            "{{\"seat\":{},\"position\":{},\"name\":\"{}\",\"chips\":{},\"is_sitting_out\":{}}}",
+            "{{\"seat\":{},\"position\":{},\"name\":\"{}\",\"chips\":{},\"chips_after_hand\":{},\"is_sitting_out\":{}}}",
             self.seat,
             match &self.position {
                 Some(pos) => pos.to_json(),
@@ -79,6 +80,7 @@ impl Player {
             },
             self.name.replace("\"", "\\\""),
             self.chips,
+            self.chips_after_hand,
             self.is_sitting_out
         )
     }
@@ -374,7 +376,7 @@ struct Hand {
 
 impl Hand {
     fn from_str(hand_str: &str) -> Self {
-        //println!("hand_str: {}", hand_str);
+        println!("hand_str: {}", hand_str);
 
         let re = regex::Regex::new(r"PokerStars Hand #(\d+):\s+.+?\(\$(\d+\.\d+)\/\$(\d+\.\d+) USD\) - (\d{4}/\d{2}/\d{2} \d{1,2}:\d{2}:\d{2}) CET \[\d{4}/\d{2}/\d{2} \d{1,2}:\d{2}:\d{2} ET\]").unwrap();
         let re2 = regex::Regex::new(r"Table '(.+?)' (\d+)-max Seat #(\d+) is the button").unwrap();
@@ -448,13 +450,13 @@ impl Hand {
             show_down_actions = Self::parse_show_down_actions(show_down_str);
         }
 
-        let players = Self::parse_players(hand_str, dealer_seat);
         let pre_actions = Self::parse_pre_actions(hand_str);
         let (hero_cards, hero_name) = Self::parse_hero_cards_and_name(hand_str);
-       
+        
         let community_cards = Self::parse_community_cards(hand_str);
         let (total_pot, main_pot, side_pot, side_pot2, rake) = Self::parse_pot_and_rake(hand_str);
-
+        let players = Self::parse_players(hand_str, dealer_seat, &pre_actions, &preflop_actions, &flop_actions, &turn_actions, &river_actions, &show_down_actions);
+        
         Hand {
             id: hand_id,
             small_blind,
@@ -481,7 +483,7 @@ impl Hand {
         }
     }
 
-    fn parse_players(hand_str: &str, dealer_seat: u32) -> Vec<Player> {
+    fn parse_players(hand_str: &str, dealer_seat: u32, pre_actions: &Vec<PlayerAction>, preflop_actions: &Vec<PlayerAction>, flop_actions: &Vec<PlayerAction>, turn_actions: &Vec<PlayerAction>, river_actions: &Vec<PlayerAction>, show_down_actions: &Vec<PlayerAction>) -> Vec<Player> {
         let mut players = Vec::new();
         
         // Regex to match seat information
@@ -497,8 +499,9 @@ impl Hand {
                 players.push(Player {
                     seat,
                     position: Option::<Position>::None,
-                    name,
+                    name: name.clone(),
                     chips,
+                    chips_after_hand: Self::calculate_chips_after_hand(name.clone(), chips, pre_actions, preflop_actions, flop_actions, turn_actions, river_actions, show_down_actions),
                     is_sitting_out,
                 });
             }
@@ -517,6 +520,61 @@ impl Hand {
         // Sort by seat number
         players.sort_by_key(|p| p.seat);
         players
+    }
+
+    fn calculate_chips_after_hand(name: String, chips: f32, pre_actions: &Vec<PlayerAction>, preflop_actions: &Vec<PlayerAction>, flop_actions: &Vec<PlayerAction>, turn_actions: &Vec<PlayerAction>, river_actions: &Vec<PlayerAction>, show_down_actions: &Vec<PlayerAction>) -> f32 {
+        let mut chips_after_hand = chips;
+
+        let mut put_into_pot = 0.0;
+
+        for action in pre_actions.iter().chain(preflop_actions.iter()) {
+            if action.player_name == name {
+                match &action.action {
+                    &Action::PostSmallBlind(amount) => put_into_pot += amount,
+                    &Action::PostBigBlind(amount) => put_into_pot += amount,
+                    &Action::Bet(amount) => put_into_pot += amount,
+                    &Action::BetAndAllIn(amount) => put_into_pot += amount,
+                    &Action::Raise(_, to) => put_into_pot += to - put_into_pot,
+                    &Action::RaiseAndAllIn(_, to) => put_into_pot += to - put_into_pot,
+                    &Action::Call(amount) => put_into_pot += amount,
+                    &Action::CallAndAllIn(amount) => put_into_pot += amount,
+                    &Action::Collected(amount) => chips_after_hand += amount,
+                    &Action::CollectedFromSidePot(amount) => chips_after_hand += amount,
+                    &Action::CollectedFromMainPot(amount) => chips_after_hand += amount,
+                    &Action::CashedOut(amount, _) => chips_after_hand += amount,
+                    &Action::UncalledBet(amount) => chips_after_hand += amount,
+                    _ => {}
+                }
+            }
+        }
+        chips_after_hand -= put_into_pot;
+
+        let streets = vec![flop_actions, turn_actions, river_actions, show_down_actions];
+        for street in streets {
+            put_into_pot = 0.0;
+            for action in street {
+                if action.player_name == name {
+                    match &action.action {
+                        &Action::Bet(amount) => put_into_pot += amount,
+                        &Action::BetAndAllIn(amount) => put_into_pot += amount,
+                        &Action::Raise(_, to) => put_into_pot += to - put_into_pot,
+                        &Action::RaiseAndAllIn(_, to) => put_into_pot += to - put_into_pot,
+                        &Action::Call(amount) => put_into_pot += amount,
+                        &Action::CallAndAllIn(amount) => put_into_pot += amount,
+                        &Action::Collected(amount) => chips_after_hand += amount,
+                        &Action::CollectedFromSidePot(amount) => chips_after_hand += amount,
+                        &Action::CollectedFromMainPot(amount) => chips_after_hand += amount,
+                        &Action::CashedOut(amount, _) => chips_after_hand += amount,
+                        &Action::UncalledBet(amount) => chips_after_hand += amount,
+                        _ => {}
+                    }
+                }
+            }
+            chips_after_hand -= put_into_pot;
+        }
+
+        let rounded = (chips_after_hand * 100.0).round() / 100.0;
+        rounded as f32
     }
 
     fn parse_pre_actions(hand_str: &str) -> Vec<PlayerAction> {
@@ -970,6 +1028,13 @@ fn create_tray_thread() -> (mpsc::Sender<TrayCommand>, mpsc::Receiver<AppCommand
 
 #[tokio::main]
 async fn main() {
+    let hands = get_hands_from_file("C:\\Users\\kerte\\AppData\\Local\\PokerStars\\HandHistory\\LakatosJózsef\\HH20250626 Kartvelia II - $0.01-$0.02 - USD No Limit Hold'em.txt");
+    for hand in hands {
+        println!("{}", hand.to_json());
+        send_hand_to_server(hand.clone()).await;
+    }
+
+    /* 
     let (tray_tx, app_rx) = create_tray_thread();
 
     let mut last_hand_id: Option<String> = None;
@@ -1025,6 +1090,7 @@ async fn main() {
 
         sleep(Duration::from_secs(3)).await;
     }
+*/
 }
 
 fn load_icon(path: &std::path::Path) -> tray_icon::Icon {
