@@ -1,7 +1,7 @@
 import { handJsonToDb } from "@/app/serverUtils/handJsonToDb";
 import db from "@/app/serverUtils/db";
 import { Hands } from "@/db/schema";
-import { getMostRecentHand } from "@/app/serverUtils/serverRequests/hand";
+import { getHands } from "@/app/serverUtils/serverRequests/hand";
 import { notifyNewHand } from "@/app/serverUtils/sse";
 import { eq } from "drizzle-orm";
 
@@ -39,7 +39,10 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
-  const hand = await getMostRecentHand();
-  return Response.json(hand);
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const page = Number(searchParams.get("page") ?? "0");
+  const pageSize = Number(searchParams.get("pageSize") ?? "10");
+  const hands = await getHands(page, pageSize);
+  return Response.json(hands);
 }

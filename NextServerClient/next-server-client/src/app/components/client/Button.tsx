@@ -4,12 +4,13 @@ export default function Button({
   children,
   className,
   href,
+  onClick,
   ...props
 }: {
   children: React.ReactNode;
   className?: string;
   href?: string;
-  [key: string]: any;
+  onClick?: () => void;
 }) {
   if (href) {
     return (
@@ -26,6 +27,7 @@ export default function Button({
   return (
     <button
       className={`text-center border rounded-md p-2 cursor-pointer ${className}`}
+      onClick={onClick}
       {...props}
     >
       {children}

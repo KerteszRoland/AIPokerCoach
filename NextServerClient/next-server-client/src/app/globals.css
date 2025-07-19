@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -17,6 +18,13 @@
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {

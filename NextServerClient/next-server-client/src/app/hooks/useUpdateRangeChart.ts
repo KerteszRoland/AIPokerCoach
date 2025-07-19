@@ -17,8 +17,8 @@ export function useUpdateRangeChart() {
     try {
       await axios.put(`/api/chart/${id}`, data);
       return true;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unknown error");
       return false;
     } finally {
       setLoading(false);

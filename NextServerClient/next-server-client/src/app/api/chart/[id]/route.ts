@@ -7,20 +7,22 @@ import {
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const chart = await getRangeChartById({ id: params.id });
+  const { id } = await params;
+  const chart = await getRangeChartById({ id });
   if (!chart) return new Response("Not found", { status: 404 });
   return Response.json(chart);
 }
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body: RangeChartUpdateDTO = await request.json();
-    await updateRangeChart({ id: params.id, data: body });
+    const { id } = await params;
+    await updateRangeChart({ id, data: body });
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error(error);
@@ -30,10 +32,11 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await deleteRangeChart(params.id);
+    const { id } = await params;
+    await deleteRangeChart(id);
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error(error);

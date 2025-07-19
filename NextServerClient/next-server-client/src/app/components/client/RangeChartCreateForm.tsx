@@ -5,7 +5,7 @@ import PokerHandChart from "./PokerHandChart";
 import { useCreateRangeChart } from "@/app/hooks/useCreateRangeChart";
 import { useRouter } from "next/navigation";
 import Button from "./Button";
-import { isValidPosition, Positions } from "@/app/config/position";
+import { Positions, Position, PositionsArray } from "@/app/config/position";
 import {
   ChartType,
   ChartAction,
@@ -13,31 +13,33 @@ import {
   ChartTypes,
   ChartTypesArray,
 } from "@/app/config/chart";
-import { Position } from "@/app/config/position";
+import { RangeChartCreateDTO } from "@/app/serverUtils/serverRequests/chart";
 
 export default function RangeChartCreateForm() {
   const router = useRouter();
   const { create: createRangeChart } = useCreateRangeChart();
   const [type, setType] = useState<ChartType>(ChartTypes.rfi);
-  const [forPosition, setForPosition] = useState<Position>("BTN");
+  const [forPosition, setForPosition] = useState<Position>(Positions.BTN);
   const [againstPosition, setAgainstPosition] = useState<Position | undefined>(
-    undefined
+    Positions.BTN
   );
   const [chartActions, setChartActions] = useState<
     { hand: ChartHand; action: ChartAction }[]
   >([]);
 
   const handleCreate = async () => {
-    if (!isValidPosition(forPosition)) {
-      throw new Error("Invalid position");
-    }
-
-    const chart = await createRangeChart({
+    const newChartRange: RangeChartCreateDTO = {
       type,
       forPosition,
       againstPosition,
       hands: chartActions,
-    });
+    };
+
+    if (![ChartTypes.frfi, ChartTypes.bet3].includes(type)) {
+      newChartRange.againstPosition = undefined;
+    }
+
+    const chart = await createRangeChart(newChartRange);
     if (chart) {
       router.push(`/pokerHandChart/${chart.id}`);
     }
@@ -52,7 +54,7 @@ export default function RangeChartCreateForm() {
         value={forPosition}
         onChange={(e) => setForPosition(e.target.value as Position)}
       >
-        {Positions.map((position) => (
+        {PositionsArray.map((position) => (
           <option key={position} value={position}>
             {position}
           </option>
@@ -64,7 +66,18 @@ export default function RangeChartCreateForm() {
         value={type}
         onChange={(e) => {
           setType(e.target.value as ChartType);
-          setAgainstPosition(undefined);
+          if (
+            (e.target.value as ChartType) !== ChartTypes.frfi &&
+            (e.target.value as ChartType) !== ChartTypes.bet3
+          ) {
+            setAgainstPosition(undefined);
+          } else {
+            if (forPosition === Positions.BTN) {
+              setAgainstPosition(Positions.SB);
+            } else {
+              setAgainstPosition(Positions.BTN);
+            }
+          }
         }}
       >
         {ChartTypesArray.map((type) => (
@@ -81,7 +94,7 @@ export default function RangeChartCreateForm() {
             value={againstPosition}
             onChange={(e) => setAgainstPosition(e.target.value as Position)}
           >
-            {Positions.filter((position) => position !== forPosition).map(
+            {PositionsArray.filter((position) => position !== forPosition).map(
               (position) => (
                 <option key={position} value={position}>
                   {position}

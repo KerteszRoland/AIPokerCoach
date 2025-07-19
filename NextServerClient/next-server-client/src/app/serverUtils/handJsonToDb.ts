@@ -44,6 +44,7 @@ export async function handJsonToDb(hand: any) {
       position: player.position,
       name: player.name,
       chips: player.chips,
+      chipsAfterHand: player.chips_after_hand,
       isSittingOut: player.is_sitting_out,
       isHero: isHero,
     });

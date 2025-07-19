@@ -3,11 +3,14 @@
 import { useState } from "react";
 import PokerHandChart from "./PokerHandChart";
 import { useUpdateRangeChart } from "@/app/hooks/useUpdateRangeChart";
-import { RangeChartFull } from "@/app/serverUtils/serverRequests/chart";
+import {
+  RangeChartFull,
+  RangeChartUpdateDTO,
+} from "@/app/serverUtils/serverRequests/chart";
 import { useRouter } from "next/navigation";
 import { useDeleteRangeChart } from "@/app/hooks/useDeleteRangeChart";
 import Button from "./Button";
-import { isValidPosition, Position, Positions } from "@/app/config/position";
+import { Position, Positions, PositionsArray } from "@/app/config/position";
 import {
   ChartAction,
   ChartHand,
@@ -27,27 +30,24 @@ export default function RangeChartUpdateForm({
   const [type, setType] = useState<ChartType>(chart.type);
   const [forPosition, setForPosition] = useState<Position>(chart.forPosition);
   const [againstPosition, setAgainstPosition] = useState<Position | undefined>(
-    chart.againstPosition
+    chart.againstPosition ??
+      (forPosition === Positions.BTN ? Positions.SB : Positions.BTN)
   );
   const [chartActions, setChartActions] = useState<
     { hand: ChartHand; action: ChartAction }[]
   >(chart.hands.map((hand) => ({ hand: hand.hand, action: hand.action })));
 
   const handleUpdate = async () => {
-    if (!isValidPosition(forPosition)) {
-      throw new Error("Invalid position");
-    }
-
-    if (chart.againstPosition && !isValidPosition(chart.againstPosition)) {
-      throw new Error("Invalid against position");
-    }
-    console.log("againstPosition", againstPosition);
-    const updatedChart = await updateRangeChart(chart.id, {
+    const updatedChartRange: RangeChartUpdateDTO = {
       type,
       forPosition,
       againstPosition,
       hands: chartActions,
-    });
+    };
+    if (![ChartTypes.frfi, ChartTypes.bet3].includes(type)) {
+      updatedChartRange.againstPosition = undefined;
+    }
+    const updatedChart = await updateRangeChart(chart.id, updatedChartRange);
     if (!updatedChart) {
       throw new Error("Failed to update chart");
     }
@@ -55,8 +55,12 @@ export default function RangeChartUpdateForm({
   };
 
   const handleDelete = async () => {
-    await deleteRangeChart(chart.id);
-    router.push("/pokerHandChart");
+    const result = await deleteRangeChart(chart.id);
+    if (result) {
+      router.push("/pokerHandChart");
+    } else {
+      throw new Error("Failed to delete chart");
+    }
   };
 
   return (
@@ -68,7 +72,7 @@ export default function RangeChartUpdateForm({
         value={forPosition}
         onChange={(e) => setForPosition(e.target.value as Position)}
       >
-        {Positions.map((position) => (
+        {PositionsArray.map((position) => (
           <option key={position} value={position}>
             {position}
           </option>
@@ -85,6 +89,12 @@ export default function RangeChartUpdateForm({
             (e.target.value as ChartType) !== ChartTypes.bet3
           ) {
             setAgainstPosition(undefined);
+          } else {
+            if (forPosition === Positions.BTN) {
+              setAgainstPosition(Positions.SB);
+            } else {
+              setAgainstPosition(Positions.BTN);
+            }
           }
         }}
       >
@@ -102,7 +112,7 @@ export default function RangeChartUpdateForm({
             value={againstPosition}
             onChange={(e) => setAgainstPosition(e.target.value as Position)}
           >
-            {Positions.filter((position) => position !== forPosition).map(
+            {PositionsArray.filter((position) => position !== forPosition).map(
               (position) => (
                 <option key={position} value={position}>
                   {position}

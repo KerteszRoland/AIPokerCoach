@@ -179,6 +179,15 @@ export function getCardValue(card: Card): CardValue {
   return card.slice(0, -1) as CardValue;
 }
 
+export function getCardsSortedByValue(cards: Card[]): Card[] {
+  return cards.sort((a, b) => {
+    return (
+      CardValuesArray.indexOf(getCardValue(a)) -
+      CardValuesArray.indexOf(getCardValue(b))
+    );
+  });
+}
+
 export function getCardSuit(card: Card): CardSuit {
   return card.slice(-1) as CardSuit;
 }

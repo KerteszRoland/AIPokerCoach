@@ -4,7 +4,7 @@ import { HandFull } from "@/app/serverUtils/serverRequests/hand";
 import { useRecentHandViaSocket } from "@/app/hooks/useRecentHandViaSocket";
 
 export default function HandSocket({ initialHand }: { initialHand: HandFull }) {
-  const { hand, loading, error } = useRecentHandViaSocket({ initialHand });
+  const { hand } = useRecentHandViaSocket({ initialHand });
 
   const heroCards = hand.players.find((p) => p.isHero)?.cards;
 

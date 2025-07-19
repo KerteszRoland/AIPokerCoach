@@ -1,19 +1,47 @@
-import HandSocket from "./components/client/HandSocket";
+import Card from "./components/server/Card";
 import { getMostRecentHand } from "./serverUtils/serverRequests/hand";
+import { FaUser } from "react-icons/fa";
+import LiveRangeChart from "./components/client/LiveRangeChart";
+import PreviousRoundsCard from "./components/client/PreviousRoundsCard";
 
 export default async function Home() {
   const hand = await getMostRecentHand();
 
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <h1 className="text-4xl font-bold">AI Poker Coach</h1>
-        <p className="text-lg">
-          Help you improve your poker skills with the power of AI.
-        </p>
+  if (!hand) {
+    return <div>No hand found</div>;
+  }
 
-        {hand && <HandSocket initialHand={hand} />}
+  return (
+    <div className="flex flex-col items-center">
+      <main className="flex items-start justify-between max-w-[1400px] w-full px-8 pt-8">
+        <div className="flex flex-col max-w-[400px] gap-4">
+          <CoachReviewCard />
+          <PreviousRoundsCard />
+        </div>
+        <div className="flex flex-col max-w-[600px]">
+          <LiveRangeChart initialHand={hand} />
+        </div>
       </main>
     </div>
+  );
+}
+
+function CoachReviewCard() {
+  return (
+    <Card>
+      <div className="flex flex-row gap-4">
+        <div className="flex flex-col gap-2 items-center pt-2">
+          <FaUser className="h-10 w-10 text-orange-300" />
+          <p className="text-lg text-center">AI Coach</p>
+        </div>
+        <div className="text-lg max-h-[150px] overflow-y-auto">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam,
+          quos.Lorem ipsum dolor sit amet consectetur adipisicing elit.
+          Quisquam, quos. Lorem ipsum dolor sit amet consectetur adipisicing
+          elit. Quisquam, quos.Lorem ipsum dolor sit amet consectetur
+          adipisicing elit. Quisquam, quos.
+        </div>
+      </div>
+    </Card>
   );
 }

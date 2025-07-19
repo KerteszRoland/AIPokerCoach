@@ -16,7 +16,7 @@ export function useRecentHandViaSocket({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/hand");
+      const res = await fetch("/api/hand/recent");
       if (res.ok) {
         const data = await res.json();
         setHand(data);

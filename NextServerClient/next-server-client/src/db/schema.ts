@@ -35,6 +35,7 @@ export const HandPlayers = sqliteTable(
     position: text("position"),
     name: text("name").notNull(),
     chips: real("chips").notNull(),
+    chipsAfterHand: real("chips_after_hand").notNull(),
     isSittingOut: integer("is_sitting_out", { mode: "boolean" })
       .notNull()
       .default(false),

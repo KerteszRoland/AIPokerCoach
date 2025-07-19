@@ -14,7 +14,7 @@ function getHandTable(): ChartHand[][] {
     if (index < 0 || index > 12) {
       throw new Error("index parameter given is less than 0 or grater than 12");
     }
-    let cards = [
+    const cards = [
       "A",
       "K",
       "Q",
@@ -33,10 +33,10 @@ function getHandTable(): ChartHand[][] {
   }
 
   const size = 13;
-  let handTable: ChartHand[][] = [];
+  const handTable: ChartHand[][] = [];
 
   for (let i = 0; i < size; i++) {
-    let row: ChartHand[] = [];
+    const row: ChartHand[] = [];
     for (let j = 0; j < size; j++) {
       row.push("" as ChartHand); // you did not see anything, ok?
     }
@@ -103,10 +103,12 @@ function getActionColor(action: ChartAction) {
 export default function PokerHandChart({
   value = [],
   editable = false,
+  showColorExplanation = false,
   onChange,
 }: {
   value?: { hand: ChartHand; action: ChartAction }[];
   editable?: boolean;
+  showColorExplanation?: boolean;
   onChange?: (value: { hand: ChartHand; action: ChartAction }[]) => void;
 }) {
   const showSelectActionBtns = editable;
@@ -127,14 +129,17 @@ export default function PokerHandChart({
     const sameActionAsSelected = handAction?.action === selectedAction;
 
     if (!handAction) {
-      let newHighlightedActions = [...value, { hand, action: selectedAction }];
+      const newHighlightedActions = [
+        ...value,
+        { hand, action: selectedAction },
+      ];
       onChange?.(newHighlightedActions);
       return;
     }
 
     if (handAction) {
       // remove action from hand
-      let newHighlightedActions = value.filter((item) => item.hand !== hand);
+      const newHighlightedActions = value.filter((item) => item.hand !== hand);
 
       if (!sameActionAsSelected) {
         // add selected action to hand
@@ -169,12 +174,14 @@ export default function PokerHandChart({
             <tr key={`poker-hand-chart-row-${i}`}>
               {row.map((data, j) => (
                 <td
-                  onMouseDown={() =>
-                    editable && toggleActionToHand(data, selectedAction)
-                  }
+                  onMouseDown={() => {
+                    if (editable) {
+                      toggleActionToHand(data, selectedAction);
+                    }
+                  }}
                   onMouseEnter={(e) => {
-                    if (e.buttons === 1) {
-                      editable && toggleActionToHand(data, selectedAction);
+                    if (e.buttons === 1 && editable) {
+                      toggleActionToHand(data, selectedAction);
                     }
                   }}
                   className={`w-10 h-10 text-center border rounded-md border-black-300 ${
@@ -196,6 +203,17 @@ export default function PokerHandChart({
           ))}
         </tbody>
       </table>
+      {showColorExplanation && (
+        <div className="pt-2 flex flex-row gap-2">
+          {ChartActionsArray.map((action) => (
+            <div key={action} className="flex flex-row gap-2">
+              <div className={`text-xl p-1 ${getActionColor(action)}`}>
+                {action[0].toUpperCase() + action.slice(1).toLowerCase()}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

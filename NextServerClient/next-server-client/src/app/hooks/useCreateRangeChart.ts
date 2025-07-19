@@ -19,8 +19,8 @@ export function useCreateRangeChart() {
     try {
       const res = await axios.post("/api/chart", data);
       return res.data;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unknown error");
       return null;
     } finally {
       setLoading(false);

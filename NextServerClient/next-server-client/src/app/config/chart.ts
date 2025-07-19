@@ -1,3 +1,5 @@
+import { Card, getCardsSortedByValue, getCardSuit, getCardValue } from "./card";
+
 export type ChartType = "rfi" | "frfi" | "3-bet";
 export const ChartTypesArray: ChartType[] = ["rfi", "frfi", "3-bet"];
 export const ChartTypes = {
@@ -373,4 +375,20 @@ export const ChartHandsArray: ChartHand[] = [
 
 export function isValidChartHand(hand: string): hand is ChartHand {
   return ChartHandsArray.includes(hand as ChartHand);
+}
+
+export function getChartHandFromCards(card1: Card, card2: Card): ChartHand {
+  const isSuited = getCardSuit(card1) === getCardSuit(card2);
+  const sortedCards = getCardsSortedByValue([card1, card2]);
+  const value1 = getCardValue(sortedCards[0]);
+  const value2 = getCardValue(sortedCards[1]);
+
+  const chartHand =
+    value2 + value1 + (value1 === value2 ? "" : isSuited ? "s" : "o");
+
+  if (!isValidChartHand(chartHand)) {
+    throw new Error(`Invalid chart hand: ${chartHand}`);
+  }
+
+  return chartHand as ChartHand;
 }

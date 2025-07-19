@@ -24,6 +24,7 @@ export type HandPlayer = {
   seat: Seat;
   position: Position | null;
   chips: number;
+  chipsAfterHand: number;
   isSittingOut: boolean;
   isHero: boolean;
 };
@@ -81,7 +82,7 @@ export type HandFull = Hand & {
     cards: HandPlayerCards;
   })[];
   actions: Action[];
-  communityCards: CommunityCard;
+  communityCards: CommunityCard | null;
 };
 
 export function HandFullFromDb(
@@ -118,7 +119,9 @@ export function HandFullFromDb(
       ...ActionFromDb(action),
       player: HandPlayerFromDb(action.player),
     })),
-    communityCards: CommunityCardFromDb(dbHand.communityCards),
+    communityCards: dbHand.communityCards
+      ? CommunityCardFromDb(dbHand.communityCards)
+      : null,
   } as HandFull;
 }
 
@@ -151,6 +154,7 @@ export function HandPlayerFromDb(
     seat: dbHandPlayer.seat as Seat,
     position: dbHandPlayer.position as Position | null,
     chips: dbHandPlayer.chips,
+    chipsAfterHand: dbHandPlayer.chipsAfterHand,
     isSittingOut: dbHandPlayer.isSittingOut,
     isHero: dbHandPlayer.isHero,
   } as HandPlayer;
@@ -216,4 +220,30 @@ export async function getMostRecentHand(): Promise<HandFull | null> {
   });
 
   return hand ? HandFullFromDb(hand) : null;
+}
+
+export async function getHands(
+  page: number,
+  pageSize: number
+): Promise<HandFull[]> {
+  const hands = await db.query.Hands.findMany({
+    orderBy: [desc(Hands.createdAt)],
+    limit: pageSize,
+    offset: page * pageSize,
+    with: {
+      players: {
+        with: {
+          cards: true,
+        },
+      },
+      actions: {
+        orderBy: [asc(Actions.street), asc(Actions.sequence)],
+        with: {
+          player: true,
+        },
+      },
+      communityCards: true,
+    },
+  });
+  return hands.map(HandFullFromDb);
 }
