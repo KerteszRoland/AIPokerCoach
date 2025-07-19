@@ -44,3 +44,4 @@ NextServerClient/next-server-client/next-env.d.ts
 
 #db
 NextServerClient/next-server-client/local.db
+NextServerClient/next-server-client/.vercel
