@@ -1,8 +1,6 @@
-/*
 import { getRangeChartById } from "@/app/serverUtils/serverRequests/chart";
 import RangeChartUpdateForm from "@/app/components/client/RangeChartUpdateForm";
 import RangeChartCreateForm from "@/app/components/client/RangeChartCreateForm";
-*/
 
 export default async function EditPokerHandChartPage({
   params,
@@ -10,8 +8,7 @@ export default async function EditPokerHandChartPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <div>EditPokerHandChartPage {id}</div>;
-  /*
+
   const isNew = id === "new";
   if (isNew) {
     return <RangeChartCreateForm />;
@@ -21,5 +18,4 @@ export default async function EditPokerHandChartPage({
     return <div>Chart not found</div>;
   }
   return <RangeChartUpdateForm chart={chart} />;
-  */
 }

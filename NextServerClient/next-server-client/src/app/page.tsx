@@ -1,19 +1,11 @@
-/*
 import Card from "./components/server/Card";
 import { getMostRecentHand } from "./serverUtils/serverRequests/hand";
 import { FaUser } from "react-icons/fa";
 import LiveRangeChart from "./components/client/LiveRangeChart";
 import PreviousRoundsCard from "./components/client/PreviousRoundsCard";
-*/
 
 export default async function Home() {
-  return <div>Hello</div>;
-  /*
   const hand = await getMostRecentHand();
-
-  if (!hand) {
-    return <div>No hand found</div>;
-  }
 
   return (
     <div className="flex flex-col items-center">
@@ -28,10 +20,8 @@ export default async function Home() {
       </main>
     </div>
   );
-  */
 }
 
-/*
 function CoachReviewCard() {
   return (
     <Card>
@@ -51,4 +41,3 @@ function CoachReviewCard() {
     </Card>
   );
 }
-*/
