@@ -6,6 +6,10 @@ import { useRecentHandViaSocket } from "@/app/hooks/useRecentHandViaSocket";
 export default function HandSocket({ initialHand }: { initialHand: HandFull }) {
   const { hand } = useRecentHandViaSocket({ initialHand });
 
+  if (!hand) {
+    return <div>No hand</div>;
+  }
+
   const heroCards = hand.players.find((p) => p.isHero)?.cards;
 
   return (
