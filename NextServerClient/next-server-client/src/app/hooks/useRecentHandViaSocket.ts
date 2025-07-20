@@ -6,9 +6,9 @@ import { HandFull } from "@/app/serverUtils/serverRequests/hand";
 export function useRecentHandViaSocket({
   initialHand,
 }: {
-  initialHand: HandFull;
+  initialHand: HandFull | null;
 }) {
-  const [hand, setHand] = useState<HandFull>(initialHand);
+  const [hand, setHand] = useState<HandFull | null>(initialHand);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

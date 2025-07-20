@@ -8,7 +8,7 @@ import {
 } from "@/db/schema";
 import db from "../db";
 import { Card } from "@/app/config/card";
-import { Position, Seat } from "@/app/config/position";
+import { Position } from "@/app/config/position";
 import { ActionName, numToStreet, Street } from "@/app/config/action";
 
 export type HandPlayerCards = {
@@ -21,7 +21,7 @@ export type HandPlayer = {
   id: string;
   name: string;
   handId: string;
-  seat: Seat;
+  seat: number;
   position: Position | null;
   chips: number;
   chipsAfterHand: number;
@@ -126,48 +126,19 @@ export function HandFullFromDb(
 }
 
 export function HandFromDb(dbHand: typeof Hands.$inferSelect): Hand {
-  return {
-    id: dbHand.id,
-    pokerClientHandId: dbHand.pokerClientHandId,
-    date: dbHand.date,
-    time: dbHand.time,
-    tableName: dbHand.tableName,
-    smallBlind: dbHand.smallBlind,
-    maxPlayers: dbHand.maxPlayers,
-    dealerSeat: dbHand.dealerSeat,
-    totalPot: dbHand.totalPot,
-    mainPot: dbHand.mainPot,
-    sidePot: dbHand.sidePot,
-    sidePot2: dbHand.sidePot2,
-    rake: dbHand.rake,
-    createdAt: dbHand.createdAt,
-  } as Hand;
+  return dbHand as Hand;
 }
 
 export function HandPlayerFromDb(
   dbHandPlayer: typeof HandPlayers.$inferSelect
 ): HandPlayer {
-  return {
-    id: dbHandPlayer.id,
-    name: dbHandPlayer.name,
-    handId: dbHandPlayer.handId,
-    seat: dbHandPlayer.seat as Seat,
-    position: dbHandPlayer.position as Position | null,
-    chips: dbHandPlayer.chips,
-    chipsAfterHand: dbHandPlayer.chipsAfterHand,
-    isSittingOut: dbHandPlayer.isSittingOut,
-    isHero: dbHandPlayer.isHero,
-  } as HandPlayer;
+  return dbHandPlayer as HandPlayer;
 }
 
 export function HandPlayerCardsFromDb(
   dbHandPlayerCard: typeof HandPlayerCards.$inferSelect
 ): HandPlayerCards {
-  return {
-    handPlayerId: dbHandPlayerCard.handPlayerId,
-    card1: dbHandPlayerCard.card1 as Card,
-    card2: dbHandPlayerCard.card2 as Card,
-  } as HandPlayerCards;
+  return dbHandPlayerCard as HandPlayerCards;
 }
 
 export function ActionFromDb(dbAction: typeof Actions.$inferSelect): Action {

@@ -12,7 +12,7 @@ import { HandFull } from "@/app/serverUtils/serverRequests/hand";
 export default function LiveRangeChart({
   initialHand,
 }: {
-  initialHand: HandFull;
+  initialHand: HandFull | null;
 }) {
   const { hand: previousHand } = useRecentHandViaSocket({
     initialHand,
@@ -21,7 +21,7 @@ export default function LiveRangeChart({
   const [againstPosition, setAgainstPosition] = useState<Position>(
     forPosition === Positions.BTN ? Positions.UTG : Positions.BTN
   );
-  const [auto, setAuto] = useState(false);
+  const [auto, setAuto] = useState(true);
   const [type, setType] = useState<ChartType>(ChartTypes.rfi);
 
   const { charts } = useRangeCharts({

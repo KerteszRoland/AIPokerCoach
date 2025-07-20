@@ -1,7 +1,8 @@
+import { chartActionEnum, chartTypeEnum } from "@/db/schema";
 import { Card, getCardsSortedByValue, getCardSuit, getCardValue } from "./card";
 
-export type ChartType = "rfi" | "frfi" | "3-bet";
-export const ChartTypesArray: ChartType[] = ["rfi", "frfi", "3-bet"];
+export type ChartType = (typeof chartTypeEnum.enumValues)[number];
+export const ChartTypesArray = chartTypeEnum.enumValues;
 export const ChartTypes = {
   rfi: "rfi" as ChartType,
   frfi: "frfi" as ChartType,
@@ -12,13 +13,8 @@ export function isValidChartType(type: string): type is ChartType {
   return ChartTypesArray.includes(type as ChartType);
 }
 
-export type ChartAction = "raise" | "call" | "3-bet" | "4-bet";
-export const ChartActionsArray: ChartAction[] = [
-  "raise",
-  "call",
-  "3-bet",
-  "4-bet",
-];
+export type ChartAction = (typeof chartActionEnum.enumValues)[number];
+export const ChartActionsArray = chartActionEnum.enumValues;
 export const ChartActions = {
   raise: "raise" as ChartAction,
   call: "call" as ChartAction,

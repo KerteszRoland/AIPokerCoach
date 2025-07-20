@@ -149,11 +149,17 @@ export async function updateRangeChart({
   const chartResult = await db
     .update(RangeCharts)
     .set({
-      ...data,
+      type: data.type as ChartType,
+      forPosition: data.forPosition
+        ? (data.forPosition as Position)
+        : undefined,
+      againstPosition: data.againstPosition
+        ? (data.againstPosition as Position)
+        : undefined,
     })
     .where(eq(RangeCharts.id, id));
 
-  if (chartResult.rowsAffected === 0) {
+  if (chartResult.rowCount === 0) {
     throw new Error("Failed to update range chart");
   }
 
@@ -175,7 +181,7 @@ export async function updateRangeChart({
 
 export async function deleteRangeChart(id: string): Promise<void> {
   const result = await db.delete(RangeCharts).where(eq(RangeCharts.id, id));
-  if (result.rowsAffected === 0) {
+  if (result.rowCount === 0) {
     throw new Error("Failed to delete range chart");
   }
 }

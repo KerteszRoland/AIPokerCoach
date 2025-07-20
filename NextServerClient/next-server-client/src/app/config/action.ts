@@ -1,82 +1,35 @@
-export type ActionName =
-  | "PostSmallBlind"
-  | "PostBigBlind"
-  | "SitsOut"
-  | "Fold"
-  | "Call"
-  | "Raise"
-  | "Check"
-  | "Bet"
-  | "BetAndAllIn"
-  | "CallAndAllIn"
-  | "RaiseAndAllIn"
-  | "Muck"
-  | "Shows"
-  | "Collected"
-  | "CashedOut"
-  | "TimedOut"
-  | "UncalledBet"
-  | "DoesNotShow"
-  | "Join"
-  | "Leave"
-  | "Disconnected"
-  | "Connected"
-  | "CollectedFromSidePot"
-  | "CollectedFromMainPot";
+import { actionNameEnum } from "@/db/schema";
 
-export const ActionNamesArray: ActionName[] = [
-  "PostSmallBlind",
-  "PostBigBlind",
-  "SitsOut",
-  "Fold",
-  "Call",
-  "Raise",
-  "Check",
-  "Bet",
-  "BetAndAllIn",
-  "CallAndAllIn",
-  "RaiseAndAllIn",
-  "Muck",
-  "Shows",
-  "Collected",
-  "CashedOut",
-  "TimedOut",
-  "UncalledBet",
-  "DoesNotShow",
-  "Join",
-  "Leave",
-  "Disconnected",
-  "Connected",
-  "CollectedFromSidePot",
-  "CollectedFromMainPot",
-];
+export type ActionName = (typeof actionNameEnum.enumValues)[number];
 
-export enum ActionNames {
-  PostSmallBlind = "PostSmallBlind",
-  PostBigBlind = "PostBigBlind",
-  SitsOut = "SitsOut",
-  Fold = "Fold",
-  Call = "Call",
-  Raise = "Raise",
-  Check = "Check",
-  Bet = "Bet",
-  BetAndAllIn = "BetAndAllIn",
-  CallAndAllIn = "CallAndAllIn",
-  RaiseAndAllIn = "RaiseAndAllIn",
-  Muck = "Muck",
-  Shows = "Shows",
-  Collected = "Collected",
-  CashedOut = "CashedOut",
-  TimedOut = "TimedOut",
-  UncalledBet = "UncalledBet",
-  DoesNotShow = "DoesNotShow",
-  Join = "Join",
-  Leave = "Leave",
-  Disconnected = "Disconnected",
-  Connected = "Connected",
-  CollectedFromSidePot = "CollectedFromSidePot",
-  CollectedFromMainPot = "CollectedFromMainPot",
-}
+export const ActionNamesArray = actionNameEnum.enumValues;
+
+export const ActionNames = {
+  PostSmallBlind: "PostSmallBlind" as ActionName,
+  PostBigBlind: "PostBigBlind" as ActionName,
+  SitsOut: "SitsOut" as ActionName,
+  Fold: "Fold" as ActionName,
+  Call: "Call" as ActionName,
+  Raise: "Raise" as ActionName,
+  Check: "Check" as ActionName,
+  Bet: "Bet" as ActionName,
+  BetAndAllIn: "BetAndAllIn" as ActionName,
+  CallAndAllIn: "CallAndAllIn" as ActionName,
+  RaiseAndAllIn: "RaiseAndAllIn" as ActionName,
+  Muck: "Muck" as ActionName,
+  Shows: "Shows" as ActionName,
+  Collected: "Collected" as ActionName,
+  CashedOut: "CashedOut" as ActionName,
+  TimedOut: "TimedOut" as ActionName,
+  UncalledBet: "UncalledBet" as ActionName,
+  DoesNotShow: "DoesNotShow" as ActionName,
+  Join: "Join" as ActionName,
+  Leave: "Leave" as ActionName,
+  Disconnected: "Disconnected" as ActionName,
+  Connected: "Connected" as ActionName,
+  CollectedFromSidePot: "CollectedFromSidePot" as ActionName,
+  CollectedFromMainPot: "CollectedFromMainPot" as ActionName,
+};
 
 export function isValidActionName(text: string): text is ActionName {
   return ActionNamesArray.includes(text as ActionName);
@@ -91,14 +44,14 @@ export const StreetsArray: Street[] = [
   "river",
   "showdown",
 ];
-export enum Streets {
-  Pre = "pre",
-  Preflop = "preflop",
-  Flop = "flop",
-  Turn = "turn",
-  River = "river",
-  Showdown = "showdown",
-}
+export const Streets = {
+  Pre: "pre" as Street,
+  Preflop: "preflop" as Street,
+  Flop: "flop" as Street,
+  Turn: "turn" as Street,
+  River: "river" as Street,
+  Showdown: "showdown" as Street,
+};
 
 export function streetToNum(streetName: Street) {
   switch (streetName) {

@@ -4,6 +4,8 @@ import {
   RangeChartFullFromDb,
 } from "@/app/serverUtils/serverRequests/chart";
 import db from "@/app/serverUtils/db";
+import { Position } from "@/app/config/position";
+import { ChartType } from "@/app/config/chart";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -21,10 +23,11 @@ export async function GET(request: Request) {
     },
     where: (charts, { eq, and }) => {
       const eqs = [];
-      if (forPosition) eqs.push(eq(charts.forPosition, forPosition));
+      if (forPosition)
+        eqs.push(eq(charts.forPosition, forPosition as Position));
       if (againstPosition)
-        eqs.push(eq(charts.againstPosition, againstPosition));
-      if (type) eqs.push(eq(charts.type, type));
+        eqs.push(eq(charts.againstPosition, againstPosition as Position));
+      if (type) eqs.push(eq(charts.type, type as ChartType));
 
       return and(...eqs);
     },

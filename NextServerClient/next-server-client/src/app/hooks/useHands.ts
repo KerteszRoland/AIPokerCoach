@@ -15,26 +15,27 @@ export function useHands({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchHands = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data } = await axios.get(`/api/hand/`, {
+        params: {
+          page,
+          pageSize,
+        },
+      });
+      setHands(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchHands = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data } = await axios.get(`/api/hand/`, {
-          params: {
-            page,
-            pageSize,
-          },
-        });
-        setHands(data);
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchHands();
   }, [page, pageSize]);
 
-  return { hands, loading, error };
+  return { hands, loading, error, refetch: fetchHands };
 }

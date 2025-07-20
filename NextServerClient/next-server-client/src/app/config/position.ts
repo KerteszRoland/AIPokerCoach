@@ -1,40 +1,21 @@
-export type Position =
-  | "BTN"
-  | "SB"
-  | "BB"
-  | "UTG"
-  | "UTG+1"
-  | "UTG+2"
-  | "LJ"
-  | "HJ"
-  | "CO";
+import { positionEnum } from "@/db/schema";
 
-export const PositionsArray: Position[] = [
-  "BTN",
-  "SB",
-  "BB",
-  "UTG",
-  "UTG+1",
-  "UTG+2",
-  "LJ",
-  "HJ",
-  "CO",
-];
+export type Position = (typeof positionEnum.enumValues)[number];
 
-export enum Positions {
-  BTN = "BTN",
-  SB = "SB",
-  BB = "BB",
-  UTG = "UTG",
-  UTG1 = "UTG+1",
-  UTG2 = "UTG+2",
-  LJ = "LJ",
-  HJ = "HJ",
-  CO = "CO",
-}
+export const PositionsArray = positionEnum.enumValues;
+
+export const Positions = {
+  BTN: "BTN" as Position,
+  SB: "SB" as Position,
+  BB: "BB" as Position,
+  UTG: "UTG" as Position,
+  UTG1: "UTG1" as Position,
+  UTG2: "UTG2" as Position,
+  LJ: "LJ" as Position,
+  HJ: "HJ" as Position,
+  CO: "CO" as Position,
+};
 
 export function isValidPosition(position: string): position is Position {
   return PositionsArray.includes(position as Position);
 }
-
-export type Seat = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;

@@ -1,5 +1,9 @@
 const subscribers = new Set<(data: string) => void>();
 
+export type HandNotification = {
+  type: "new-hand" | "connected";
+};
+
 export function notifyNewHand() {
   const data = JSON.stringify({ type: "new-hand" });
   const subscribersToRemove = new Set<(data: string) => void>();

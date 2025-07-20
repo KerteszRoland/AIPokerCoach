@@ -1,12 +1,7 @@
 import "dotenv/config";
-import { drizzle } from "drizzle-orm/libsql";
-import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/db/schema";
 
-const client = createClient({
-  url: `file:${process.env.DB_FILE_NAME!}`,
-});
-
-export const db = drizzle(client, { schema });
+export const db = drizzle(process.env.DATABASE_URL!, { schema });
 
 export default db;
