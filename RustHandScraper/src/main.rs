@@ -1029,7 +1029,7 @@ fn create_tray_thread() -> (mpsc::Sender<TrayCommand>, mpsc::Receiver<AppCommand
 #[tokio::main]
 async fn main() {
     let hands = get_hands_from_file("C:\\Users\\kerte\\AppData\\Local\\PokerStars\\HandHistory\\LakatosJózsef\\HH20250626 Kartvelia II - $0.01-$0.02 - USD No Limit Hold'em.txt");
-    for hand in hands {
+    for hand in &hands[0..10] {
         println!("{}", hand.to_json());
         send_hand_to_server(hand.clone()).await;
     }
