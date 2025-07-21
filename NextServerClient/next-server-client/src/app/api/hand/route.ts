@@ -2,7 +2,6 @@ import { handJsonToDb } from "@/app/serverUtils/handJsonToDb";
 import db from "@/app/serverUtils/db";
 import { Hands } from "@/db/schema";
 import { getHands } from "@/app/serverUtils/serverRequests/hand";
-import { notifyNewHand } from "@/app/serverUtils/sse";
 import { eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
@@ -19,17 +18,8 @@ export async function POST(request: Request) {
     }
 
     await handJsonToDb(body);
-    try {
-      notifyNewHand();
-    } catch (error) {
-      console.error(error);
-    }
 
-    try {
-      return new Response(null, { status: 204 });
-    } catch (error) {
-      console.error(error);
-    }
+    return new Response(null, { status: 204 });
   } catch (reason) {
     console.error(reason);
     const message =

@@ -1,22 +1,14 @@
 "use client";
 
 import { Position, Positions, PositionsArray } from "@/app/config/position";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "./Button";
 import { ChartType, ChartTypes, ChartTypesArray } from "@/app/config/chart";
 import { useRangeCharts } from "@/app/hooks/useRangeCharts";
 import PokerHandChart from "./PokerHandChart";
-import { useRecentHandViaSocket } from "@/app/hooks/useRecentHandViaSocket";
 import { HandFull } from "@/app/serverUtils/serverRequests/hand";
 
-export default function LiveRangeChart({
-  initialHand,
-}: {
-  initialHand: HandFull | null;
-}) {
-  const { hand: previousHand } = useRecentHandViaSocket({
-    initialHand,
-  });
+export default function LiveRangeChart({ hand }: { hand: HandFull }) {
   const [forPosition, setForPosition] = useState<Position>(Positions.BTN);
   const [againstPosition, setAgainstPosition] = useState<Position>(
     forPosition === Positions.BTN ? Positions.UTG : Positions.BTN
@@ -33,21 +25,6 @@ export default function LiveRangeChart({
       : againstPosition,
     type,
   });
-
-  useEffect(() => {
-    if (previousHand) {
-      const hero = previousHand.players.find((p) => p.isHero);
-      if (!hero || (hero && hero.position === null)) {
-        return;
-      }
-
-      const nextPosition =
-        PositionsArray[
-          (PositionsArray.indexOf(hero.position!) - 1) % PositionsArray.length
-        ];
-      setForPosition(nextPosition);
-    }
-  }, [previousHand]);
 
   const chart = charts.length > 0 ? charts[0] : null;
 

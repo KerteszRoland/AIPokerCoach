@@ -6,19 +6,10 @@ import { Card as CardType } from "@/app/config/card";
 import { useHands } from "@/app/hooks/useHands";
 import { useEffect, useRef } from "react";
 import { Position } from "@/app/config/position";
-import { useHandNotification } from "@/app/hooks/useHandNotification";
 
 export default function PreviousRoundsCard() {
   const scrollableContentRef = useRef<HTMLDivElement>(null);
-  const { hands, refetch } = useHands({ page: 0, pageSize: 30 });
-
-  useHandNotification({
-    onNewHand: (hand) => {
-      if (hand.type === "new-hand") {
-        refetch();
-      }
-    },
-  });
+  const { hands } = useHands({ page: 0, pageSize: 30 });
 
   useEffect(() => {
     if (scrollableContentRef.current) {
