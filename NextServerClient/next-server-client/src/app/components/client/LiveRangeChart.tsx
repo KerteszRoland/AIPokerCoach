@@ -6,9 +6,8 @@ import Button from "./Button";
 import { ChartType, ChartTypes, ChartTypesArray } from "@/app/config/chart";
 import { useRangeCharts } from "@/app/hooks/useRangeCharts";
 import PokerHandChart from "./PokerHandChart";
-import { HandFull } from "@/app/serverUtils/serverRequests/hand";
 
-export default function LiveRangeChart({ hand }: { hand: HandFull }) {
+export default function LiveRangeChart() {
   const [forPosition, setForPosition] = useState<Position>(Positions.BTN);
   const [againstPosition, setAgainstPosition] = useState<Position>(
     forPosition === Positions.BTN ? Positions.UTG : Positions.BTN

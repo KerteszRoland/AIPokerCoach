@@ -1,12 +1,9 @@
 import Card from "./components/server/Card";
-import { getMostRecentHand } from "./serverUtils/serverRequests/hand";
 import { FaUser } from "react-icons/fa";
 import LiveRangeChart from "./components/client/LiveRangeChart";
 import PreviousRoundsCard from "./components/client/PreviousRoundsCard";
 
 export default async function Home() {
-  const hand = await getMostRecentHand();
-
   return (
     <div className="flex flex-col items-center">
       <main className="flex items-start justify-between max-w-[1400px] w-full px-8 pt-8">
@@ -15,7 +12,7 @@ export default async function Home() {
           <PreviousRoundsCard />
         </div>
         <div className="flex flex-col max-w-[600px]">
-          <LiveRangeChart initialHand={hand} />
+          <LiveRangeChart />
         </div>
       </main>
     </div>
