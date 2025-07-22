@@ -3,13 +3,16 @@
 import { getChartHandFromCards } from "@/config/chart";
 import Card from "../server/Card";
 import { Card as CardType } from "@/config/card";
-import { useHands } from "@/hooks/useHands";
+import { useGetHands } from "@/hooks/useHands";
 import { useEffect, useRef } from "react";
 import { Position } from "@/config/position";
 
 export default function PreviousRoundsCard() {
   const scrollableContentRef = useRef<HTMLDivElement>(null);
-  const { hands } = useHands({ page: 0, pageSize: 30 });
+  const { data: hands } = useGetHands({
+    page: 0,
+    pageSize: 30,
+  });
 
   useEffect(() => {
     if (scrollableContentRef.current) {
@@ -30,38 +33,43 @@ export default function PreviousRoundsCard() {
         ref={scrollableContentRef}
       >
         <div className="flex flex-col gap-2">
-          {hands.map((hand) => {
-            const hero = hand.players.find((player) => player.isHero);
-            if (!hero || (hero && hero.position === null)) {
-              return null;
-            }
-            const wonAmount = hero.chipsAfterHand - hero.chips;
-            return <PreviousRoundResult key={hand.id} wonAmount={wonAmount} />;
-          })}
+          {hands &&
+            hands.map((hand) => {
+              const hero = hand.players.find((player) => player.isHero);
+              if (!hero || (hero && hero.position === null)) {
+                return null;
+              }
+              const wonAmount = hero.chipsAfterHand - hero.chips;
+              return (
+                <PreviousRoundResult key={hand.id} wonAmount={wonAmount} />
+              );
+            })}
         </div>
         <div className="flex flex-col gap-2">
-          {hands.map((hand) => {
-            const hero = hand.players.find((player) => player.isHero);
-            if (
-              !hero ||
-              (hero && (hero.position === null || hero.cards === null))
-            ) {
-              return null;
-            }
-            const heroCards = [hero.cards.card1, hero.cards.card2];
-            return <PreviousRoundCards key={hand.id} cards={heroCards} />;
-          })}
+          {hands &&
+            hands.map((hand) => {
+              const hero = hand.players.find((player) => player.isHero);
+              if (
+                !hero ||
+                (hero && (hero.position === null || hero.cards === null))
+              ) {
+                return null;
+              }
+              const heroCards = [hero.cards!.card1, hero.cards!.card2];
+              return <PreviousRoundCards key={hand.id} cards={heroCards} />;
+            })}
         </div>
         <div className="flex flex-col gap-2">
-          {hands.map((hand) => {
-            const hero = hand.players.find((player) => player.isHero);
-            if (!hero || (hero && hero.position === null)) {
-              return null;
-            }
-            return (
-              <PreviousRoundPosition key={hand.id} position={hero.position} />
-            );
-          })}
+          {hands &&
+            hands.map((hand) => {
+              const hero = hand.players.find((player) => player.isHero);
+              if (!hero || (hero && hero.position === null)) {
+                return null;
+              }
+              return (
+                <PreviousRoundPosition key={hand.id} position={hero.position} />
+              );
+            })}
         </div>
       </div>
     </Card>

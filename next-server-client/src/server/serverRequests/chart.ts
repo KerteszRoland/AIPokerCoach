@@ -8,7 +8,7 @@ export type RangeChart = {
   id: string;
   type: ChartType;
   forPosition: Position;
-  againstPosition?: Position;
+  againstPosition: Position | null;
 };
 
 export type RangeChartHand = {
@@ -30,14 +30,14 @@ export type RangeChartHandCreateDTO = {
 export type RangeChartCreateDTO = {
   type: ChartType;
   forPosition: Position;
-  againstPosition?: Position;
+  againstPosition: Position | null;
   hands: RangeChartHandCreateDTO[];
 };
 
 export type RangeChartUpdateDTO = {
   type?: ChartType;
   forPosition?: Position;
-  againstPosition?: Position;
+  againstPosition?: Position | null;
   hands?: RangeChartHandCreateDTO[];
 };
 
@@ -48,7 +48,7 @@ export function RangeChartFromDb(
     id: dbChart.id,
     type: dbChart.type as ChartType,
     forPosition: dbChart.forPosition as Position,
-    againstPosition: dbChart.againstPosition as Position | undefined,
+    againstPosition: dbChart.againstPosition as Position | null,
   };
 }
 
@@ -61,7 +61,7 @@ export function RangeChartFullFromDb(
     id: dbChart.id,
     type: dbChart.type as ChartType,
     forPosition: dbChart.forPosition as Position,
-    againstPosition: dbChart.againstPosition as Position | undefined,
+    againstPosition: dbChart.againstPosition as Position | null,
     hands: dbChart.hands.map(RangeChartHandFromDb) as RangeChartHand[],
   };
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
 
 export default function Button({
   children,
@@ -11,13 +12,16 @@ export default function Button({
   className?: string;
   href?: string;
   onClick?: () => void;
-}) {
+} & (
+  | (ButtonHTMLAttributes<HTMLButtonElement> & { href?: never })
+  | (AnchorHTMLAttributes<HTMLAnchorElement> & { href: string })
+)) {
   if (href) {
     return (
       <Link
         href={href}
         className={`text-center border rounded-md p-2 cursor-pointer ${className}`}
-        {...props}
+        {...(props as AnchorHTMLAttributes<HTMLAnchorElement>)}
       >
         {children}
       </Link>
@@ -28,7 +32,7 @@ export default function Button({
     <button
       className={`text-center border rounded-md p-2 cursor-pointer ${className}`}
       onClick={onClick}
-      {...props}
+      {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
     >
       {children}
     </button>

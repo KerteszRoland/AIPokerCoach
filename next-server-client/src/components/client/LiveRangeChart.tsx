@@ -4,7 +4,7 @@ import { Position, Positions, PositionsArray } from "@/config/position";
 import { useState } from "react";
 import Button from "./Button";
 import { ChartType, ChartTypes, ChartTypesArray } from "@/config/chart";
-import { useRangeCharts } from "@/hooks/useRangeCharts";
+import { useGetRangeCharts } from "@/hooks/useRangeChart";
 import PokerHandChart from "./PokerHandChart";
 
 export default function LiveRangeChart() {
@@ -15,7 +15,7 @@ export default function LiveRangeChart() {
   const [auto, setAuto] = useState(true);
   const [type, setType] = useState<ChartType>(ChartTypes.rfi);
 
-  const { charts } = useRangeCharts({
+  const { data: charts } = useGetRangeCharts({
     page: 0,
     pageSize: 1,
     forPosition,
@@ -25,7 +25,7 @@ export default function LiveRangeChart() {
     type,
   });
 
-  const chart = charts.length > 0 ? charts[0] : null;
+  const chart = charts && charts.length > 0 ? charts[0] : null;
 
   return (
     <div className="flex flex-col items-end gap-4">

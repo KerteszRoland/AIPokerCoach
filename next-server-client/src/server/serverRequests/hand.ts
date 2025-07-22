@@ -30,7 +30,7 @@ export type HandPlayer = {
 };
 
 export type HandPlayerFull = HandPlayer & {
-  cards: HandPlayerCards;
+  cards: HandPlayerCards | null;
 };
 
 export type Action = {
@@ -78,10 +78,8 @@ export type Hand = {
 };
 
 export type HandFull = Hand & {
-  players: (HandPlayer & {
-    cards: HandPlayerCards;
-  })[];
-  actions: Action[];
+  players: HandPlayerFull[];
+  actions: ActionFull[];
   communityCards: CommunityCard | null;
 };
 

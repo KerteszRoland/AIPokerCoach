@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import PokerHandChart from "./PokerHandChart";
-import { useUpdateRangeChart } from "@/hooks/useUpdateRangeChart";
 import {
   RangeChartFull,
   RangeChartUpdateDTO,
 } from "@/server/serverRequests/chart";
 import { useRouter } from "next/navigation";
-import { useDeleteRangeChart } from "@/hooks/useDeleteRangeChart";
+import {
+  useDeleteRangeChart,
+  useUpdateRangeChart,
+} from "@/hooks/useRangeChart";
 import Button from "./Button";
 import { Position, Positions, PositionsArray } from "@/config/position";
 import {
@@ -25,12 +27,14 @@ export default function RangeChartUpdateForm({
   chart: RangeChartFull;
 }) {
   const router = useRouter();
-  const { update: updateRangeChart } = useUpdateRangeChart();
-  const { deleteChart: deleteRangeChart } = useDeleteRangeChart();
+  const { mutate: updateRangeChart, isPending: isUpdating } =
+    useUpdateRangeChart();
+  const { mutate: deleteRangeChart, isPending: isDeleting } =
+    useDeleteRangeChart();
   const [type, setType] = useState<ChartType>(chart.type);
   const [forPosition, setForPosition] = useState<Position>(chart.forPosition);
-  const [againstPosition, setAgainstPosition] = useState<Position | undefined>(
-    chart.againstPosition ??
+  const [againstPosition, setAgainstPosition] = useState<Position | null>(
+    chart.againstPosition ||
       (forPosition === Positions.BTN ? Positions.SB : Positions.BTN)
   );
   const [chartActions, setChartActions] = useState<
@@ -41,26 +45,37 @@ export default function RangeChartUpdateForm({
     const updatedChartRange: RangeChartUpdateDTO = {
       type,
       forPosition,
-      againstPosition,
+      againstPosition: ![ChartTypes.frfi, ChartTypes.bet3].includes(type)
+        ? null
+        : againstPosition || null,
       hands: chartActions,
     };
-    if (![ChartTypes.frfi, ChartTypes.bet3].includes(type)) {
-      updatedChartRange.againstPosition = undefined;
-    }
-    const updatedChart = await updateRangeChart(chart.id, updatedChartRange);
-    if (!updatedChart) {
-      throw new Error("Failed to update chart");
-    }
-    router.push(`/pokerHandChart/${chart.id}`);
+
+    updateRangeChart(
+      { id: chart.id, data: updatedChartRange },
+      {
+        onSuccess: () => {
+          router.push(`/pokerHandChart/${chart.id}`);
+        },
+        onError: (error) => {
+          console.error(error);
+        },
+      }
+    );
   };
 
   const handleDelete = async () => {
-    const result = await deleteRangeChart(chart.id);
-    if (result) {
-      router.push("/pokerHandChart");
-    } else {
-      throw new Error("Failed to delete chart");
-    }
+    deleteRangeChart(
+      { id: chart.id },
+      {
+        onSuccess: () => {
+          router.push("/pokerHandChart");
+        },
+        onError: (error) => {
+          console.error(error);
+        },
+      }
+    );
   };
 
   return (
@@ -88,7 +103,7 @@ export default function RangeChartUpdateForm({
             (e.target.value as ChartType) !== ChartTypes.frfi &&
             (e.target.value as ChartType) !== ChartTypes.bet3
           ) {
-            setAgainstPosition(undefined);
+            setAgainstPosition(null);
           } else {
             if (forPosition === Positions.BTN) {
               setAgainstPosition(Positions.SB);
@@ -109,7 +124,7 @@ export default function RangeChartUpdateForm({
           <label htmlFor="againstPosition">Against Position</label>
           <select
             id="againstPosition"
-            value={againstPosition}
+            value={againstPosition || ""}
             onChange={(e) => setAgainstPosition(e.target.value as Position)}
           >
             {PositionsArray.filter((position) => position !== forPosition).map(
@@ -128,11 +143,19 @@ export default function RangeChartUpdateForm({
         editable
       />
       <div className="flex flex-col items-center gap-4">
-        <Button onClick={handleUpdate} className="bg-green-500">
-          Update
+        <Button
+          onClick={handleUpdate}
+          className="bg-green-500"
+          disabled={isUpdating}
+        >
+          {isUpdating ? "Updating..." : "Update"}
         </Button>
-        <Button onClick={handleDelete} className="bg-red-500">
-          Delete
+        <Button
+          onClick={handleDelete}
+          className="bg-red-500"
+          disabled={isDeleting}
+        >
+          {isDeleting ? "Deleting..." : "Delete"}
         </Button>
       </div>
     </div>

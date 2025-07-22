@@ -7,7 +7,6 @@ import { eq } from "drizzle-orm";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-
     console.log(body);
     const isAlreadyInDb = await db.query.Hands.findFirst({
       where: eq(Hands.pokerClientHandId, body.id),
