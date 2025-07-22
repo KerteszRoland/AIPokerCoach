@@ -1,7 +1,7 @@
-import { handJsonToDb } from "@/app/serverUtils/handJsonToDb";
-import db from "@/app/serverUtils/db";
+import { handJsonToDb } from "@/server/handJsonToDb";
+import db from "@/server/db";
 import { Hands } from "@/db/schema";
-import { getHands } from "@/app/serverUtils/serverRequests/hand";
+import { getHands } from "@/server/serverRequests/hand";
 import { eq } from "drizzle-orm";
 
 export async function POST(request: Request) {

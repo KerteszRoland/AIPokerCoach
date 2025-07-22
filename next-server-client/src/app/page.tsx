@@ -1,7 +1,7 @@
-import Card from "./components/server/Card";
+import Card from "../components/server/Card";
 import { FaUser } from "react-icons/fa";
-import LiveRangeChart from "./components/client/LiveRangeChart";
-import PreviousRoundsCard from "./components/client/PreviousRoundsCard";
+import LiveRangeChart from "../components/client/LiveRangeChart";
+import PreviousRoundsCard from "../components/client/PreviousRoundsCard";
 
 export default async function Home() {
   return (

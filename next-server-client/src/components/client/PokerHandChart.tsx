@@ -7,7 +7,7 @@ import {
   ChartActionsArray,
   ChartHand,
   isValidChartHand,
-} from "@/app/config/chart";
+} from "@/config/chart";
 
 function getHandTable(): ChartHand[][] {
   function indexToCard(index: number) {

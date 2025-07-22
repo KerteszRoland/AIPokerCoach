@@ -1,8 +1,8 @@
 import db from "../db";
 import { RangeCharts, RangeChartHands } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { Position } from "@/app/config/position";
-import { ChartAction, ChartHand, ChartType } from "@/app/config/chart";
+import { Position } from "@/config/position";
+import { ChartAction, ChartHand, ChartType } from "@/config/chart";
 
 export type RangeChart = {
   id: string;

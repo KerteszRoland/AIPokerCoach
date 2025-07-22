@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   RangeChartCreateDTO,
   RangeChartFull,
-} from "@/app/serverUtils/serverRequests/chart";
+} from "@/server/serverRequests/chart";
 import axios from "axios";
 
 export function useCreateRangeChart() {

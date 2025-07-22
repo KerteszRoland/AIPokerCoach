@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { RangeChartFull } from "@/app/serverUtils/serverRequests/chart";
+import { RangeChartFull } from "@/server/serverRequests/chart";
 import axios from "axios";
 
 export function useRangeChart(id: string) {

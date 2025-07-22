@@ -1,10 +1,10 @@
 "use client";
 
-import { Position, Positions, PositionsArray } from "@/app/config/position";
+import { Position, Positions, PositionsArray } from "@/config/position";
 import { useState } from "react";
 import Button from "./Button";
-import { ChartType, ChartTypes, ChartTypesArray } from "@/app/config/chart";
-import { useRangeCharts } from "@/app/hooks/useRangeCharts";
+import { ChartType, ChartTypes, ChartTypesArray } from "@/config/chart";
+import { useRangeCharts } from "@/hooks/useRangeCharts";
 import PokerHandChart from "./PokerHandChart";
 
 export default function LiveRangeChart() {

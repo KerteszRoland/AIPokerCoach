@@ -2,10 +2,10 @@ import {
   createRangeChart,
   RangeChartCreateDTO,
   RangeChartFullFromDb,
-} from "@/app/serverUtils/serverRequests/chart";
-import db from "@/app/serverUtils/db";
-import { Position } from "@/app/config/position";
-import { ChartType } from "@/app/config/chart";
+} from "@/server/serverRequests/chart";
+import db from "@/server/db";
+import { Position } from "@/config/position";
+import { ChartType } from "@/config/chart";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

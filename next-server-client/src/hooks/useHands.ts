@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { HandFull } from "@/app/serverUtils/serverRequests/hand";
+import { HandFull } from "@/server/serverRequests/hand";
 import axios from "axios";
 
 export function useHands({

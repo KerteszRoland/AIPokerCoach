@@ -1,6 +1,6 @@
-import { getRangeChartById } from "@/app/serverUtils/serverRequests/chart";
-import PokerHandChart from "@/app/components/client/PokerHandChart";
-import Button from "@/app/components/client/Button";
+import { getRangeChartById } from "@/server/serverRequests/chart";
+import PokerHandChart from "@/components/client/PokerHandChart";
+import Button from "@/components/client/Button";
 
 export default async function PokerHandChartPage({
   params,

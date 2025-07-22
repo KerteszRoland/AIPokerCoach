@@ -3,7 +3,7 @@ import {
   updateRangeChart,
   deleteRangeChart,
   RangeChartUpdateDTO,
-} from "@/app/serverUtils/serverRequests/chart";
+} from "@/server/serverRequests/chart";
 
 export async function GET(
   request: Request,

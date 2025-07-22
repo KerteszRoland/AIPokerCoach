@@ -2,22 +2,22 @@
 
 import { useState } from "react";
 import PokerHandChart from "./PokerHandChart";
-import { useUpdateRangeChart } from "@/app/hooks/useUpdateRangeChart";
+import { useUpdateRangeChart } from "@/hooks/useUpdateRangeChart";
 import {
   RangeChartFull,
   RangeChartUpdateDTO,
-} from "@/app/serverUtils/serverRequests/chart";
+} from "@/server/serverRequests/chart";
 import { useRouter } from "next/navigation";
-import { useDeleteRangeChart } from "@/app/hooks/useDeleteRangeChart";
+import { useDeleteRangeChart } from "@/hooks/useDeleteRangeChart";
 import Button from "./Button";
-import { Position, Positions, PositionsArray } from "@/app/config/position";
+import { Position, Positions, PositionsArray } from "@/config/position";
 import {
   ChartAction,
   ChartHand,
   ChartType,
   ChartTypes,
   ChartTypesArray,
-} from "@/app/config/chart";
+} from "@/config/chart";
 
 export default function RangeChartUpdateForm({
   chart,

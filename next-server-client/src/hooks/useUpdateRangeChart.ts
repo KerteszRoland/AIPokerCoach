@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { RangeChartUpdateDTO } from "@/app/serverUtils/serverRequests/chart";
+import { RangeChartUpdateDTO } from "@/server/serverRequests/chart";
 import axios from "axios";
 
 export function useUpdateRangeChart() {

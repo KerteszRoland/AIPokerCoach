@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import PokerHandChart from "./PokerHandChart";
-import { useCreateRangeChart } from "@/app/hooks/useCreateRangeChart";
+import { useCreateRangeChart } from "@/hooks/useCreateRangeChart";
 import { useRouter } from "next/navigation";
 import Button from "./Button";
-import { Positions, Position, PositionsArray } from "@/app/config/position";
+import { Positions, Position, PositionsArray } from "@/config/position";
 import {
   ChartType,
   ChartAction,
   ChartHand,
   ChartTypes,
   ChartTypesArray,
-} from "@/app/config/chart";
-import { RangeChartCreateDTO } from "@/app/serverUtils/serverRequests/chart";
+} from "@/config/chart";
+import { RangeChartCreateDTO } from "@/server/serverRequests/chart";
 
 export default function RangeChartCreateForm() {
   const router = useRouter();

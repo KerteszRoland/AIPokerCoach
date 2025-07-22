@@ -7,9 +7,9 @@ import {
   Hands,
 } from "@/db/schema";
 import db from "../db";
-import { Card } from "@/app/config/card";
-import { Position } from "@/app/config/position";
-import { ActionName, numToStreet, Street } from "@/app/config/action";
+import { Card } from "@/config/card";
+import { Position } from "@/config/position";
+import { ActionName, numToStreet, Street } from "@/config/action";
 
 export type HandPlayerCards = {
   handPlayerId: string;

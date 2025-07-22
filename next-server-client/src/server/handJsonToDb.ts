@@ -5,7 +5,7 @@ import {
   CommunityCards,
   Actions,
   HandPlayerCards,
-} from "../../db/schema";
+} from "../db/schema";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function handJsonToDb(hand: any) {

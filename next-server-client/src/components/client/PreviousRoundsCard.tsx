@@ -1,11 +1,11 @@
 "use client";
 
-import { getChartHandFromCards } from "@/app/config/chart";
+import { getChartHandFromCards } from "@/config/chart";
 import Card from "../server/Card";
-import { Card as CardType } from "@/app/config/card";
-import { useHands } from "@/app/hooks/useHands";
+import { Card as CardType } from "@/config/card";
+import { useHands } from "@/hooks/useHands";
 import { useEffect, useRef } from "react";
-import { Position } from "@/app/config/position";
+import { Position } from "@/config/position";
 
 export default function PreviousRoundsCard() {
   const scrollableContentRef = useRef<HTMLDivElement>(null);
