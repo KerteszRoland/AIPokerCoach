@@ -79,6 +79,7 @@ export const handValidationSchema = z.object({
   sidePot2: z.number(),
   rake: z.number(),
   createdAt: z.string(),
+  userId: z.string(),
 }) satisfies z.ZodType<Hand>;
 
 export const handFullValidationSchema = handValidationSchema.extend({

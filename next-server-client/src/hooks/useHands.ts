@@ -8,9 +8,11 @@ import { HandFull } from "@/server/serverRequests/hand";
 export const useGetHands = ({
   page,
   pageSize,
+  initialData,
 }: {
   page?: number;
   pageSize?: number;
+  initialData?: HandFull[];
 }) =>
   useQuery({
     queryKey: ["hands", page, pageSize],
@@ -26,4 +28,5 @@ export const useGetHands = ({
         throw error;
       }
     },
+    initialData,
   });

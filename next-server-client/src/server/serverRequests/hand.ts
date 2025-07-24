@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import {
   Actions,
   CommunityCards,
@@ -81,6 +81,7 @@ export type HandFull = Hand & {
   players: HandPlayerFull[];
   actions: ActionFull[];
   communityCards: CommunityCard | null;
+  userId: string;
 };
 
 export function HandFullFromDb(
@@ -92,6 +93,9 @@ export function HandFullFromDb(
       player: typeof HandPlayers.$inferSelect;
     })[];
     communityCards: typeof CommunityCards.$inferSelect;
+    user: {
+      id: string;
+    };
   }
 ): HandFull {
   return {
@@ -120,6 +124,7 @@ export function HandFullFromDb(
     communityCards: dbHand.communityCards
       ? CommunityCardFromDb(dbHand.communityCards)
       : null,
+    userId: dbHand.user.id,
   } as HandFull;
 }
 
@@ -185,6 +190,11 @@ export async function getMostRecentHand(): Promise<HandFull | null> {
         },
       },
       communityCards: true,
+      user: {
+        columns: {
+          id: true,
+        },
+      },
     },
   });
 
@@ -213,8 +223,43 @@ export async function getHands(
         },
       },
       communityCards: true,
+      user: {
+        columns: {
+          id: true,
+        },
+      },
     },
     where: eq(Hands.userId, userId),
   });
   return hands.map(HandFullFromDb);
+}
+
+export async function getHandById(
+  id: string,
+  userId: string
+): Promise<HandFull | null> {
+  const hand = await db.query.Hands.findFirst({
+    where: and(eq(Hands.id, id), eq(Hands.userId, userId)),
+    with: {
+      players: {
+        with: {
+          cards: true,
+        },
+      },
+      actions: {
+        orderBy: [asc(Actions.street), asc(Actions.sequence)],
+        with: {
+          player: true,
+        },
+      },
+      communityCards: true,
+      user: {
+        columns: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  return hand ? HandFullFromDb(hand) : null;
 }

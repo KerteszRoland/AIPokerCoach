@@ -6,12 +6,20 @@ import { Card as CardType } from "@/config/card";
 import { useGetHands } from "@/hooks/useHands";
 import { useEffect, useRef } from "react";
 import { Position } from "@/config/position";
+import Button from "./Button";
+import { FaArrowRight } from "react-icons/fa";
+import { HandFull } from "@/server/serverRequests/hand";
 
-export default function PreviousRoundsCard() {
+export default function PreviousRoundsCard({
+  hands: initialHands,
+}: {
+  hands: HandFull[];
+}) {
   const scrollableContentRef = useRef<HTMLDivElement>(null);
   const { data: hands } = useGetHands({
     page: 0,
     pageSize: 30,
+    initialData: initialHands,
   });
 
   useEffect(() => {
@@ -29,7 +37,7 @@ export default function PreviousRoundsCard() {
       scrollableContentMaxHeight={400}
     >
       <div
-        className="flex flex-row gap-2 h-[500px] overflow-y-auto"
+        className="flex flex-row gap-2  min-h-[250px] h-full overflow-y-auto pb-2"
         ref={scrollableContentRef}
       >
         <div className="flex flex-col gap-2">
@@ -68,6 +76,20 @@ export default function PreviousRoundsCard() {
               }
               return (
                 <PreviousRoundPosition key={hand.id} position={hero.position} />
+              );
+            })}
+        </div>
+        <div className="flex flex-col gap-2">
+          {hands &&
+            hands.map((hand) => {
+              return (
+                <Button
+                  key={hand.id}
+                  href={`/review/${hand.id}`}
+                  className="flex flex-row items-center justify-center gap-2 border-none h-[41.66px]"
+                >
+                  <FaArrowRight />
+                </Button>
               );
             })}
         </div>

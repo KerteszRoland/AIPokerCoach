@@ -13,7 +13,7 @@ export default async function PokerHandChartPage({
     return <div>Chart not found</div>;
   }
   return (
-    <div className="flex flex-col items-center gap-4">
+    <>
       <div className="flex justify-between items-center gap-4">
         <h1 className="text-2xl font-bold">{"Chart #" + fullChart.id}</h1>
         <Button
@@ -29,6 +29,6 @@ export default async function PokerHandChartPage({
         <h3>{"Against Position: " + fullChart.againstPosition}</h3>
       )}
       <PokerHandChart value={fullChart.hands} />
-    </div>
+    </>
   );
 }

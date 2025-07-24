@@ -5,7 +5,7 @@ import Button from "../../components/client/Button";
 export default async function PokerHandChartPage() {
   const { charts, total } = await getRangeCharts();
   return (
-    <div className="flex flex-col items-center gap-4">
+    <>
       <h1>{"Poker Hand Charts"}</h1>
       <Button href="/pokerHandChart/new/edit" className="bg-green-500">
         Create
@@ -34,6 +34,6 @@ export default async function PokerHandChartPage() {
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }

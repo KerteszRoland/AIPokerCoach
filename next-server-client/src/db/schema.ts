@@ -331,7 +331,7 @@ export const HandPlayers = pgTable(
 export const HandPlayerCards = pgTable(`${projectPrefix}hand_player_cards`, {
   handPlayerId: text("hand_player_id")
     .primaryKey()
-    .references(() => HandPlayers.id, { onDelete: "cascade" }),
+    .references(() => HandPlayers.id, { onDelete: "no action" }),
   card1: cardEnum("card1").notNull(),
   card2: cardEnum("card2").notNull(),
 });
@@ -377,6 +377,9 @@ export const RangeCharts = pgTable(`${projectPrefix}range_charts`, {
   type: chartTypeEnum("type").notNull(),
   forPosition: positionEnum("for_position").notNull(),
   againstPosition: positionEnum("against_position"),
+  userId: text("user_id")
+    .notNull()
+    .references(() => Users.id, { onDelete: "cascade" }),
 });
 
 export const RangeChartHands = pgTable(`${projectPrefix}range_chart_hands`, {
@@ -392,6 +395,9 @@ export const Users = pgTable(`${projectPrefix}users`, {
   id: text("id").primaryKey(), // UUID as text
   googleId: text("google_id").notNull(),
   createdAt: text("created_at").notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  image: text("image"),
 });
 
 // Relations ////////////////////////////////////////////////////////////////
@@ -449,8 +455,12 @@ export const actionsRelations = relations(Actions, ({ one }) => ({
   }),
 }));
 
-export const RangeChartRelations = relations(RangeCharts, ({ many }) => ({
+export const RangeChartRelations = relations(RangeCharts, ({ many, one }) => ({
   hands: many(RangeChartHands),
+  user: one(Users, {
+    fields: [RangeCharts.userId],
+    references: [Users.id],
+  }),
 }));
 
 export const RangeChartHandRelations = relations(
@@ -465,4 +475,5 @@ export const RangeChartHandRelations = relations(
 
 export const usersRelations = relations(Users, ({ many }) => ({
   hands: many(Hands),
+  rangeCharts: many(RangeCharts),
 }));

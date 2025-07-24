@@ -1,6 +1,5 @@
 import GoogleProvider, { GoogleProfile } from "next-auth/providers/google";
 import { Account, AuthOptions, Session, User } from "next-auth";
-import { OAuth2Client } from "google-auth-library";
 import { JWT } from "next-auth/jwt";
 import db from "@/server/db";
 import { Users } from "@/db/schema";
@@ -73,6 +72,9 @@ const authOptions = {
                 id: crypto.randomUUID(),
                 googleId: token.sub,
                 createdAt: new Date().toISOString(),
+                name: user?.name || "",
+                email: user?.email || "",
+                image: user?.image || null,
               })
               .returning();
             token.userId = newUser[0].id;

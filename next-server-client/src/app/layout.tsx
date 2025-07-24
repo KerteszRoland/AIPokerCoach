@@ -31,7 +31,7 @@ export default function RootLayout({
       >
         <Providers>
           <Header />
-          <div>{children}</div>
+          <main className="flex flex-col items-center px-4">{children}</main>
         </Providers>
       </body>
     </html>

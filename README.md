@@ -64,6 +64,7 @@ Goal: help novice poker players improve who already know the rules and general c
 - side_pot2: REAL
 - rake: REAL
 - created_at: TEXT
+- user_id: UUID (fk)
 
 ### HandPlayers
 
@@ -118,3 +119,9 @@ Goal: help novice poker players improve who already know the rules and general c
 - poker_hand_chart_id: UUID (fk)
 - hand: TEXT // (AKs)
 - action: TEXT // (raise, call, 3-bet, 4-bet)
+
+### Users
+
+- id: UUID (pk)
+- google_id: TEXT
+- created_at: TEXT
