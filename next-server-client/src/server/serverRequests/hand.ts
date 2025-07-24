@@ -1,4 +1,4 @@
-import { asc, desc } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import {
   Actions,
   CommunityCards,
@@ -193,7 +193,8 @@ export async function getMostRecentHand(): Promise<HandFull | null> {
 
 export async function getHands(
   page: number,
-  pageSize: number
+  pageSize: number,
+  userId: string
 ): Promise<HandFull[]> {
   const hands = await db.query.Hands.findMany({
     orderBy: [desc(Hands.createdAt)],
@@ -213,6 +214,7 @@ export async function getHands(
       },
       communityCards: true,
     },
+    where: eq(Hands.userId, userId),
   });
   return hands.map(HandFullFromDb);
 }

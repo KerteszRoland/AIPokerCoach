@@ -5,11 +5,20 @@ import {
   CommunityCards,
   Actions,
   HandPlayerCards,
+  Users,
 } from "../db/schema";
+import { eq } from "drizzle-orm";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function handJsonToDb(hand: any) {
+  
   const handId = crypto.randomUUID();
+  const user = await db.query.Users.findFirst({
+    where: eq(Users.googleId, hand.user_google_id),
+  });
+  if (!user) {
+    throw new Error("User not found");
+  }
   await db.insert(Hands).values({
     id: handId,
     pokerClientHandId: hand.id,
@@ -24,6 +33,7 @@ export async function handJsonToDb(hand: any) {
     sidePot: hand.side_pot,
     sidePot2: hand.side_pot2,
     rake: hand.rake,
+    userId: user.id,
     createdAt: new Date().toISOString(),
   });
 

@@ -304,6 +304,9 @@ export const Hands = pgTable(`${projectPrefix}hands`, {
   sidePot: doublePrecision("side_pot").notNull().default(0),
   sidePot2: doublePrecision("side_pot2").notNull().default(0),
   rake: doublePrecision("rake").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => Users.id, { onDelete: "cascade" }),
   createdAt: text("created_at").notNull(),
 });
 
@@ -385,6 +388,12 @@ export const RangeChartHands = pgTable(`${projectPrefix}range_chart_hands`, {
   action: chartActionEnum("action").notNull(),
 });
 
+export const Users = pgTable(`${projectPrefix}users`, {
+  id: text("id").primaryKey(), // UUID as text
+  googleId: text("google_id").notNull(),
+  createdAt: text("created_at").notNull(),
+});
+
 // Relations ////////////////////////////////////////////////////////////////
 
 export const handsRelations = relations(Hands, ({ many, one }) => ({
@@ -393,6 +402,10 @@ export const handsRelations = relations(Hands, ({ many, one }) => ({
   communityCards: one(CommunityCards, {
     fields: [Hands.id],
     references: [CommunityCards.handId],
+  }),
+  user: one(Users, {
+    fields: [Hands.userId],
+    references: [Users.id],
   }),
 }));
 
@@ -449,3 +462,7 @@ export const RangeChartHandRelations = relations(
     }),
   })
 );
+
+export const usersRelations = relations(Users, ({ many }) => ({
+  hands: many(Hands),
+}));
