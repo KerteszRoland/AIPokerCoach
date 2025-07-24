@@ -1,10 +1,17 @@
 use std::{fs::{self, DirEntry}, io::Error, thread, sync::mpsc};
 use regex::Regex;
 use reqwest;
-use tray_icon::{TrayIconBuilder, Icon, menu::{Menu, CheckMenuItem, MenuItem, MenuEvent}, TrayIconEvent};
+use tray_icon::{menu::{CheckMenuItem, IconMenuItem, Menu, MenuEvent, MenuItem}, Icon, TrayIconBuilder, TrayIconEvent};
 #[cfg(target_os = "linux")]
 use gtk;
 use tokio::time::{sleep, Duration};
+use dotenv::dotenv;
+mod auth;
+use auth::{start_login_flow, get_access_token, store_access_token, get_google_user_info};
+use std::env;
+use winreg::{RegKey, enums::HKEY_CLASSES_ROOT};
+
+use crate::auth::{clear_access_token, GoogleUserInfo};
 
 #[derive(Debug, Clone)]
 enum Position {
@@ -378,7 +385,7 @@ impl Hand {
     fn from_str(hand_str: &str) -> Self {
         println!("hand_str: {}", hand_str);
 
-        let re = regex::Regex::new(r"PokerStars Hand #(\d+):\s+.+?\(\$(\d+\.\d+)\/\$(\d+\.\d+) USD\) - (\d{4}/\d{2}/\d{2} \d{1,2}:\d{2}:\d{2}) CET \[\d{4}/\d{2}/\d{2} \d{1,2}:\d{2}:\d{2} ET\]").unwrap();
+        let re = regex::Regex::new(r"PokerStars Hand #(\d+):\s+.+?\(\$(\d+\.\d+)\/\$(\d+\.\d+) USD\) - (\d{4}/\d{2}/\d{2} \d{1,2}:\d{2}:\d{2}) (CET|\w{2}|ET)").unwrap();
         let re2 = regex::Regex::new(r"Table '(.+?)' (\d+)-max Seat #(\d+) is the button").unwrap();
         
         let caps = re.captures(hand_str).expect(&format!("Could not capture hand details from string: {}", hand_str));
@@ -723,9 +730,9 @@ impl Hand {
         (total_pot, main_pot, side_pot, side_pot2, rake)
     }
 
-    fn to_json(&self) -> String {
+    fn to_json(&self, user_google_id: String, google_access_token: String) -> String {
         format!(
-            "{{\"id\":\"{}\",\"date\":\"{}\",\"time\":\"{}\",\"table_name\":\"{}\",\"small_blind\":{},\"max_players\":{},\"dealer_seat\":{},\"players\":[{}],\"pre_actions\":[{}],\"preflop_actions\":[{}],\"flop_actions\":[{}],\"turn_actions\":[{}],\"river_actions\":[{}],\"show_down_actions\":[{}],\"hero_cards\":[{}],\"hero_name\":\"{}\",\"community_cards\":[{}],\"total_pot\":{},\"main_pot\":{},\"side_pot\":{},\"side_pot2\":{},\"rake\":{}}}",
+            "{{\"id\":\"{}\",\"date\":\"{}\",\"time\":\"{}\",\"table_name\":\"{}\",\"small_blind\":{},\"max_players\":{},\"dealer_seat\":{},\"players\":[{}],\"pre_actions\":[{}],\"preflop_actions\":[{}],\"flop_actions\":[{}],\"turn_actions\":[{}],\"river_actions\":[{}],\"show_down_actions\":[{}],\"hero_cards\":[{}],\"hero_name\":\"{}\",\"community_cards\":[{}],\"total_pot\":{},\"main_pot\":{},\"side_pot\":{},\"side_pot2\":{},\"rake\":{},\"user_google_id\":\"{}\",\"google_access_token\":\"{}\"}}",
             self.id.replace("\"", "\\\""),
             self.date.replace("\"", "\\\""),
             self.time.replace("\"", "\\\""),
@@ -747,7 +754,9 @@ impl Hand {
             self.main_pot,
             self.side_pot,
             self.side_pot2,
-            self.rake
+            self.rake,
+            user_google_id,
+            google_access_token
         )
     }
 
@@ -821,8 +830,8 @@ impl Hand {
     }
 }
 
-fn get_hand_files_from_folder(path_to_pokerstars: &str, username_wo_spaces: &str) -> Vec<Result<DirEntry, Error>> {
-    let hands_folder = format!("{}\\HandHistory\\{}", path_to_pokerstars, username_wo_spaces);
+fn get_hand_files_from_folder(path_to_pokerstars_handhistory: &str) -> Vec<Result<DirEntry, Error>> {
+    let hands_folder = format!("{}", path_to_pokerstars_handhistory);
     //let files = vec![fs::read_dir(hands_folder).unwrap().next().unwrap()]; // only parse the first file
     let files = fs::read_dir(hands_folder).unwrap().collect::<Vec<_>>();
     files
@@ -854,8 +863,8 @@ fn get_hand_by_id(all_hands: &Vec<Hand>, id: &str) -> Option<Hand> {
     all_hands.iter().find(|hand| hand.id == id).cloned()
 }
 
-fn scan_for_todays_most_recent_hand(path_to_pokerstars: &str, username_wo_spaces: &str) -> Option<Hand> {
-    let files = get_hand_files_from_folder(path_to_pokerstars, username_wo_spaces);
+fn scan_for_todays_most_recent_hand(path_to_pokerstars_handhistory: &str) -> Option<Hand> {
+    let files = get_hand_files_from_folder(path_to_pokerstars_handhistory);
     let today = chrono::Local::now().date_naive();
     let today_str = today.format("%Y%m%d").to_string();
 
@@ -883,10 +892,12 @@ fn scan_for_todays_most_recent_hand(path_to_pokerstars: &str, username_wo_spaces
     last_hand
 }
 
-async fn send_hand_to_server(hand: Hand) {
+async fn send_hand_to_server(hand: Hand, user_google_id: String, google_access_token: String) {
     let client = reqwest::Client::new();
-    let url = "http://localhost:3000/api/hand";
-    let json = hand.to_json();
+    let backend_url = std::env::var("BACKEND_URL").expect("BACKEND_URL not set");
+    println!("Sending hand to server: {}/api/hand", backend_url);
+    let url = format!("{}/api/hand", backend_url);
+    let json = hand.to_json(user_google_id, google_access_token);
     let res = client
         .post(url)
         .header("Content-Type", "application/json")
@@ -903,19 +914,62 @@ async fn send_hand_to_server(hand: Hand) {
     }
 }
 
+fn is_uri_scheme_registered() -> Result<bool, Box<dyn std::error::Error>> {
+    let hkcr = RegKey::predef(HKEY_CLASSES_ROOT);
+    let key = hkcr.open_subkey("ai-poker-coach")?;
+    Ok(key.get_value::<String, _>("").is_ok())
+}
+
+fn register_uri_scheme() -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(target_os = "windows")]
+    fn ask_for_admin() -> Result<(), Box<dyn std::error::Error>> {
+        use std::process::Command;
+        let current_exe = std::env::current_exe()?;
+        let mut cmd = Command::new("powershell");
+        cmd.arg("-Command")
+            .arg(format!(
+                "Start-Process -FilePath '{}' -Verb runAs",
+                current_exe.to_str().unwrap()
+            ));
+        let status = cmd.status()?;
+        if !status.success() {
+            return Err("Failed to elevate to admin privileges".into());
+        }
+        Ok(())
+    }
+    #[cfg(target_os = "windows")]
+    ask_for_admin()?;
+
+    let hkcr = RegKey::predef(HKEY_CLASSES_ROOT);
+    let (key, _) = hkcr.create_subkey("ai-poker-coach")?;
+    key.set_value("", &"URL:ai-poker-coach Protocol")?;
+    key.set_value("URL Protocol", &"")?;
+
+    let (shell, _) = key.create_subkey("shell")?;
+    let (open, _) = shell.create_subkey("open")?;
+    let (command, _) = open.create_subkey("command")?;
+    command.set_value("", &format!("\"{}\" \"%1\"", std::env::current_exe()?.to_str().unwrap()))?;
+    command.set_value("NoWindow", &"true")?; // Ensure the shell is opened without showing a window
+    Ok(())
+}
+
 #[derive(Debug)]
 enum TrayCommand {
     SetPaused(bool),
     SetError(Option<String>),
+    UpdateUserInfo(Option<GoogleUserInfo>, Option<tray_icon::menu::Icon>),
 }
 
 #[derive(Debug)]
 enum AppCommand {
     TogglePause,
+    LogIn,
+    LogOut,
+    SyncHands,
     Exit,
 }
 
-fn create_tray_thread() -> (mpsc::Sender<TrayCommand>, mpsc::Receiver<AppCommand>) {
+fn create_tray_thread(user_info: Option<GoogleUserInfo>, user_icon: Option<tray_icon::menu::Icon>) -> (mpsc::Sender<TrayCommand>, mpsc::Receiver<AppCommand>) {
     let (tray_tx, tray_rx) = mpsc::channel::<TrayCommand>();
     let (app_tx, app_rx) = mpsc::channel::<AppCommand>();
 
@@ -923,15 +977,36 @@ fn create_tray_thread() -> (mpsc::Sender<TrayCommand>, mpsc::Receiver<AppCommand
         #[cfg(target_os = "linux")]
         gtk::init().expect("Failed to initialize GTK.");
 
-        let icon_running = load_icon(std::path::Path::new("./assets/icon_running.png"));
-        let icon_paused = load_icon(std::path::Path::new("./assets/icon_paused.png"));
-        let icon_error = load_icon(std::path::Path::new("./assets/icon_error.png"));
+        let icon_running = load_icon(std::path::Path::new("./src/assets/icon_running.png"));
+        let icon_paused = load_icon(std::path::Path::new("./src/assets/icon_paused.png"));
+        let icon_error = load_icon(std::path::Path::new("./src/assets/icon_error.png"));
 
+        let logged_in_name = IconMenuItem::new("Not logged in", false, None, None);
+        let log_in_out = MenuItem::new("Log in/out", true, None);
         let paused = MenuItem::new("Pause", true, None);
+        let sync_hands = MenuItem::new("Sync hands", true, None);
         let exit_item = MenuItem::new("Exit", true, None);
 
+        let mut logged_in = false;
+
+        if let Some(user_info) = &user_info {
+            logged_in_name.set_enabled(true);
+            logged_in_name.set_text(&format!("{}", user_info.name));
+            logged_in_name.set_icon(user_icon);
+            log_in_out.set_text("Log out");
+            logged_in = true;
+        } else {
+            logged_in_name.set_enabled(false);
+            logged_in_name.set_text("Not logged in");
+            log_in_out.set_text("Log in");
+            logged_in_name.set_icon(None);
+        }
+
         let inner_menu = Menu::new();
+        let _ = inner_menu.append(&logged_in_name);
+        let _ = inner_menu.append(&log_in_out);
         let _ = inner_menu.append(&paused);
+        let _ = inner_menu.append(&sync_hands);
         let _ = inner_menu.append(&exit_item);
 
         let tray = TrayIconBuilder::new()
@@ -973,11 +1048,23 @@ fn create_tray_thread() -> (mpsc::Sender<TrayCommand>, mpsc::Receiver<AppCommand
 
             // Handle menu events
             if let Ok(event) = menu_channel.try_recv() {
-                if event.id() == paused.id() {
+                if event.id() == log_in_out.id() {
+                    if logged_in {
+                        println!("Log out requested");
+                        app_tx.send(AppCommand::LogOut).ok();
+                    } else {
+                        println!("Log in requested");
+                        app_tx.send(AppCommand::LogIn).ok();
+                    }
+                } 
+                else if event.id() == paused.id() {
                     is_paused = !is_paused;
                     paused.set_text(if is_paused { "Resume" } else { "Pause" });
                     println!("Toggled pause state to: {}", is_paused);
                     app_tx.send(AppCommand::TogglePause).ok();
+                } else if event.id() == sync_hands.id() {
+                    println!("Sync hands requested");
+                    app_tx.send(AppCommand::SyncHands).ok();
                 } else if event.id() == exit_item.id() {
                     println!("Exit requested");
                     app_tx.send(AppCommand::Exit).ok();
@@ -994,6 +1081,23 @@ fn create_tray_thread() -> (mpsc::Sender<TrayCommand>, mpsc::Receiver<AppCommand
                     }
                     TrayCommand::SetError(err) => {
                         error = err;
+                    }
+                    TrayCommand::UpdateUserInfo(updated_user_info, user_icon) => {
+                        tray.set_visible(false);
+                        tray.set_visible(true);
+                        if let Some(updated_user_info) = updated_user_info {
+                            logged_in_name.set_enabled(true);
+                            logged_in_name.set_text(&format!("User: {}", updated_user_info.name));
+                            logged_in_name.set_icon(user_icon);
+                            log_in_out.set_text("Log out");
+                            logged_in = true;
+                        } else {
+                            logged_in_name.set_enabled(false);
+                            logged_in_name.set_text("Not logged in");
+                            logged_in_name.set_icon(None);
+                            log_in_out.set_text("Log in");
+                            logged_in = false;
+                        }
                     }
                 }
             }
@@ -1026,16 +1130,37 @@ fn create_tray_thread() -> (mpsc::Sender<TrayCommand>, mpsc::Receiver<AppCommand
     (tray_tx, app_rx)
 }
 
-#[tokio::main]
-async fn main() {
-    let hands = get_hands_from_file("C:\\Users\\kerte\\AppData\\Local\\PokerStars\\HandHistory\\LakatosJózsef\\HH20250626 Kartvelia II - $0.01-$0.02 - USD No Limit Hold'em.txt");
-    for hand in &hands[0..10] {
-        println!("{}", hand.to_json());
-        send_hand_to_server(hand.clone()).await;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Load environment variables from .env file
+    dotenv().ok();
+   
+    if !is_uri_scheme_registered().expect("Failed to check if URI scheme is registered") {
+        register_uri_scheme().expect("Failed to register URI scheme");
     }
 
-    /* 
-    let (tray_tx, app_rx) = create_tray_thread();
+    let args: Vec<String> = env::args().collect();
+    println!("Args: {:?}", args);
+
+    // Create a Tokio runtime for async operations
+    let rt = tokio::runtime::Runtime::new()?;
+
+    if args.len() > 1 && args[1].starts_with("ai-poker-coach://") {
+        // Callback mode: Parse URL from arg
+        println!("Callback mode args: {:?}", args);
+        store_access_token(&args[1].split("token=").last().unwrap()).expect("Failed to store access token");
+        return Ok(());
+    }
+
+    let mut user_icon: Option<tray_icon::menu::Icon> = None;
+    let user_info: Option<GoogleUserInfo> = match rt.block_on(get_google_user_info()) {
+        Ok(info) => {
+            user_icon = Some(rt.block_on(load_icon_from_url(&info.picture, 32, 32)));
+            Some(info)
+        },
+        Err(_) => None,
+    };
+
+    let (tray_tx, app_rx) = create_tray_thread(user_info.clone(), user_icon);
 
     let mut last_hand_id: Option<String> = None;
     let mut error: Option<String> = None;
@@ -1051,27 +1176,65 @@ async fn main() {
                     is_paused = !is_paused;
                     println!("Main: Pause state changed to: {}", is_paused);
                 }
+                AppCommand::LogIn => {
+                    rt.block_on(start_login_flow())?;
+                    if let Ok(user_info) = rt.block_on(get_google_user_info()) {
+                        user_icon = Some(rt.block_on(load_icon_from_url(&user_info.picture, 32, 32)));
+                        tray_tx.send(TrayCommand::UpdateUserInfo(Some(user_info), user_icon)).ok();
+                    } else {
+                        println!("Failed to get user info");
+                    }
+                }
+                AppCommand::LogOut => {
+                    clear_access_token().expect("Failed to clear access token");
+                    tray_tx.send(TrayCommand::UpdateUserInfo(None, None)).ok();
+                }
+                AppCommand::SyncHands => {
+                    println!("Main: Sync hands requested");
+                    let user_info= rt.block_on(get_google_user_info());
+                    let google_access_token = get_access_token();
+
+                    if let Ok(user_info) = user_info && let Ok(google_access_token) = google_access_token {
+                        if google_access_token.is_none() {
+                            println!("Main: No access token");
+                            return Ok(());
+                        }
+                        
+                        let path_to_handhistory = std::env::var("POKERSTARS_HANDHISTORY_PATH").expect("POKERSTARS_HANDHISTORY_PATH not set");
+                        
+                        let files = get_hand_files_from_folder(&path_to_handhistory);
+                        let hands = files.iter().map(|file| get_hands_from_file(file.as_ref().unwrap().path().to_str().unwrap())).flatten().collect::<Vec<Hand>>();
+                        for hand in &hands[0..5] {
+                            println!("{}", hand.to_json( user_info.id.clone(), google_access_token.clone().unwrap()));
+                            rt.block_on(send_hand_to_server(hand.clone(),  user_info.id.clone(), google_access_token.clone().unwrap()));
+                        }
+                        
+                    }
+                }
                 AppCommand::Exit => {
                     println!("Main: Exit requested");
-                    return;
+                    return Ok(());
                 }
             }
         }
 
         if !is_paused {
-            match scan_for_todays_most_recent_hand("C:\\Users\\kerte\\AppData\\Local\\PokerStars", "LakatosJózsef") {
+            /* 
+            let pokerstars_path = std::env::var("POKERSTARS_HANDHISTORY_PATH")
+                .unwrap_or_else(|_| "C:\\Users\\AppData\\Local\\PokerStars".to_string());
+            match scan_for_todays_most_recent_hand(&pokerstars_path) {
                 Some(hand) => {
                     if let Some(ref last_id) = last_hand_id {
                         if *last_id != hand.id {
                             println!("Found new hand: {}", hand.id);
-                            send_hand_to_server(hand.clone()).await;
+                            rt.block_on(send_hand_to_server(hand.clone()));
                             println!("Hand sent to server:");
                             println!("{}", hand.to_json());
                             last_hand_id = Some(hand.id.clone());
                         }
                     } else {
                         println!("Found first hand: {}", hand.id);
-                        send_hand_to_server(hand.clone()).await;
+                        rt.block_on(send_hand_to_server(hand.clone()));
                         println!("Hand sent to server:");
                         println!("{}", hand.to_json());
                         last_hand_id = Some(hand.id.clone());
@@ -1082,19 +1245,21 @@ async fn main() {
                     error = None;
                 }
             }
+            */
         }
 
         // Send status updates to tray thread
         tray_tx.send(TrayCommand::SetPaused(is_paused)).ok();
         tray_tx.send(TrayCommand::SetError(error.clone())).ok();
 
-        sleep(Duration::from_secs(3)).await;
+        std::thread::sleep(std::time::Duration::from_secs(3));
     }
-*/
+    // Ok(())
 }
 
 fn load_icon(path: &std::path::Path) -> tray_icon::Icon {
     let (icon_rgba, icon_width, icon_height) = {
+        let current_path = std::env::current_dir().unwrap();
         let image = image::open(path)
             .expect("Failed to open icon path")
             .into_rgba8();
@@ -1103,4 +1268,13 @@ fn load_icon(path: &std::path::Path) -> tray_icon::Icon {
         (rgba, width, height)
     };
     tray_icon::Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
+}
+
+async fn load_icon_from_url(url: &str, width: u32, height: u32) -> tray_icon::menu::Icon {
+    let response = reqwest::get(url).await.unwrap();
+    let bytes = response.bytes().await.unwrap();
+    let image = image::load_from_memory(&bytes).unwrap();
+    let resized_image = image.resize_exact(width, height, image::imageops::FilterType::Lanczos3);
+    let rgba = resized_image.into_rgba8().into_raw();
+    tray_icon::menu::Icon::from_rgba(rgba, width, height).unwrap()
 }
