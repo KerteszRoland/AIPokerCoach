@@ -90,6 +90,7 @@ export default async function ReviewIdPage({
       });
 
     return <ReplayPageClient hand={hand} replayActions={replayActions} />;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.message === "NEXT_REDIRECT") {
       return notFound();

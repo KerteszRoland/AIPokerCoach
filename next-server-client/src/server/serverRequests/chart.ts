@@ -3,6 +3,7 @@ import { RangeCharts, RangeChartHands } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { Position } from "@/config/position";
 import { ChartAction, ChartHand, ChartType } from "@/config/chart";
+import { getServerSession } from "next-auth";
 
 export type RangeChart = {
   id: string;
@@ -83,6 +84,11 @@ export async function createRangeChart({
   againstPosition,
   hands,
 }: RangeChartCreateDTO): Promise<RangeChartFull> {
+  const session = await getServerSession();
+  if (!session?.userId) {
+    throw new Error("User not authenticated");
+  }
+
   const charts = await db
     .insert(RangeCharts)
     .values({
@@ -90,6 +96,7 @@ export async function createRangeChart({
       type,
       forPosition,
       againstPosition,
+      userId: session.userId,
     })
     .returning();
 
@@ -193,6 +200,11 @@ export async function getRangeCharts({
   page?: number;
   pageSize?: number;
 } = {}): Promise<{ charts: RangeChartFull[]; total: number }> {
+  const session = await getServerSession();
+  if (!session?.userId) {
+    throw new Error("User not authenticated");
+  }
+
   const offset = (page - 1) * pageSize;
   const charts = await db.query.RangeCharts.findMany({
     with: {
@@ -200,6 +212,7 @@ export async function getRangeCharts({
     },
     limit: pageSize,
     offset,
+    where: eq(RangeCharts.userId, session.userId),
   });
 
   return {

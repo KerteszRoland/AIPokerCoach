@@ -9,7 +9,7 @@ export function getPromptForHandReview(
     communityCard: CommunityCardAction | null;
   }[]
 ) {
-  const hero = hand.players.find((player: any) => player.isHero)!;
+  const hero = hand.players.find((player) => player.isHero)!;
   const prompt = `
     You are a poker coach.
     You are given a hand and a list of actions.

@@ -51,7 +51,7 @@ export default function ReplayPageClient({
 }) {
   const actionsContainerRef = useRef<HTMLDivElement>(null);
   const [currentActionIndex, setCurrentActionIndex] = useState(0);
-  const hero = hand.players.find((player: any) => player.isHero)!;
+  const hero = hand.players.find((player) => player.isHero)!;
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
