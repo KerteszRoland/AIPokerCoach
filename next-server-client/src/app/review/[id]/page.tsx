@@ -1,9 +1,29 @@
-import Card from "@/components/server/Card";
-import { Streets } from "@/config/action";
+import { ActionNames, Streets } from "@/config/action";
+import { Card as CardType } from "@/config/card";
 import getSessionOrRedirect from "@/server/getSessionOrRedirect";
-import { getHandById } from "@/server/serverRequests/hand";
+import { ActionFull, getHandById } from "@/server/serverRequests/hand";
 import { PageNotFoundError } from "next/dist/shared/lib/utils";
 import { notFound } from "next/navigation";
+import ReplayPageClient from "@/components/client/ReplayPageClient";
+
+type CommunityCardFlop = {
+  flop1: CardType;
+  flop2: CardType;
+  flop3: CardType;
+};
+
+type CommunityCardTurn = {
+  turn: CardType;
+};
+
+type CommunityCardRiver = {
+  river: CardType;
+};
+
+export type CommunityCardAction =
+  | CommunityCardFlop
+  | CommunityCardTurn
+  | CommunityCardRiver;
 
 export default async function ReviewIdPage({
   params,
@@ -19,49 +39,59 @@ export default async function ReviewIdPage({
       return notFound();
     }
 
-    return (
-      <div className="flex flex-col items-center gap-4">
-        <h1 className="text-2xl font-bold">
-          Review hand #{hand.pokerClientHandId}
-        </h1>
-        <Card>
-          {hand.actions.map((action) => {
-            return (
-              <div key={action.id}>
-                {action.sequence === 0 && action.street === Streets.Flop && (
-                  <div>
-                    <div>
-                      Flop: {hand.communityCards?.flop1},{" "}
-                      {hand.communityCards?.flop2}, {hand.communityCards?.flop3}
-                    </div>
-                  </div>
-                )}
-                {action.sequence === 0 && action.street === Streets.Turn && (
-                  <div>
-                    <div>Turn: {hand.communityCards?.turn}</div>
-                  </div>
-                )}
-                {action.sequence === 0 && action.street === Streets.River && (
-                  <div>
-                    <div>River: {hand.communityCards?.river}</div>
-                  </div>
-                )}
-                <div>
-                  {action.player.name} ({action.player.position}) {action.name}{" "}
-                  {action.amount ? `$${action.amount}` : ""}{" "}
-                  {action.amount2 ? `to $${action.amount2}` : ""}
-                  {action.card1 ? `${action.card1} ` : ""}
-                  {action.card2 ? `${action.card2} ` : ""}
-                  {action.text ? `(${action.text})` : ""}
-                </div>
-              </div>
-            );
-          })}
-        </Card>
-      </div>
-    );
-  } catch (error) {
-    if (error instanceof PageNotFoundError) {
+    const replayActions: {
+      action: ActionFull | null;
+      communityCard: CommunityCardAction | null;
+    }[] = [];
+
+    hand.actions
+      .filter(
+        (action) =>
+          ![
+            ActionNames.Connected,
+            ActionNames.Disconnected,
+            ActionNames.SitsOut,
+            ActionNames.Join,
+            ActionNames.Leave,
+          ].includes(action.name)
+      )
+      .forEach((action) => {
+        if (action.sequence === 0) {
+          switch (action.street) {
+            case Streets.Flop:
+              replayActions.push({
+                action: null,
+                communityCard: {
+                  flop1: hand.communityCards!.flop1!,
+                  flop2: hand.communityCards!.flop2!,
+                  flop3: hand.communityCards!.flop3!,
+                },
+              });
+              break;
+            case Streets.Turn:
+              replayActions.push({
+                action: null,
+                communityCard: {
+                  turn: hand.communityCards!.turn!,
+                },
+              });
+              break;
+            case Streets.River:
+              replayActions.push({
+                action: null,
+                communityCard: {
+                  river: hand.communityCards!.river!,
+                },
+              });
+              break;
+          }
+        }
+        replayActions.push({ action: action, communityCard: null });
+      });
+
+    return <ReplayPageClient hand={hand} replayActions={replayActions} />;
+  } catch (error: any) {
+    if (error.message === "NEXT_REDIRECT") {
       return notFound();
     }
     return (

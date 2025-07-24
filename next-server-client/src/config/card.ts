@@ -72,6 +72,38 @@ export function isValidCardSuit(suit: string): boolean {
   return CardSuitsArray.includes(suit as CardSuit);
 }
 
+export function getCardSuitColor(card: Card): string {
+  const suit = getCardSuit(card);
+  switch (suit) {
+    case "s":
+      return "#6a7282";
+    case "c":
+      return "#00c950";
+    case "h":
+      return "#fb2c36";
+    case "d":
+      return "#2b7fff";
+  }
+}
+
+export function getCardSuitEmoji(card: Card): string {
+  const suit = getCardSuit(card);
+  switch (suit) {
+    case "s":
+      return "♠";
+    case "c":
+      return "♣";
+    case "h":
+      return "♥";
+    case "d":
+      return "♦";
+  }
+}
+
+export function getCardDisplay(card: Card): string {
+  return `${getCardValue(card)}${getCardSuitEmoji(card)}`;
+}
+
 export function getCardValue(card: Card): CardValue {
   return card.slice(0, -1) as CardValue;
 }

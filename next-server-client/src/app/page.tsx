@@ -6,6 +6,7 @@ import SignedInServer from "@/components/server/SignedInServer";
 import SignedOutServer from "@/components/server/SignedOutServer";
 import getSessionOrRedirect from "@/server/getSessionOrRedirect";
 import { getHands } from "@/server/serverRequests/hand";
+import CoachReviewCard from "@/components/server/CoachReviewCard";
 
 export default async function Home() {
   const session = await getSessionOrRedirect();
@@ -25,25 +26,5 @@ export default async function Home() {
         </div>
       </SignedInServer>
     </>
-  );
-}
-
-function CoachReviewCard() {
-  return (
-    <Card>
-      <div className="flex flex-row gap-4">
-        <div className="flex flex-col gap-2 items-center pt-2">
-          <FaUser className="h-10 w-10 text-orange-300" />
-          <p className="text-lg text-center">AI Coach</p>
-        </div>
-        <div className="text-lg max-h-[150px] overflow-y-auto">
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam,
-          quos.Lorem ipsum dolor sit amet consectetur adipisicing elit.
-          Quisquam, quos. Lorem ipsum dolor sit amet consectetur adipisicing
-          elit. Quisquam, quos.Lorem ipsum dolor sit amet consectetur
-          adipisicing elit. Quisquam, quos.
-        </div>
-      </div>
-    </Card>
   );
 }
