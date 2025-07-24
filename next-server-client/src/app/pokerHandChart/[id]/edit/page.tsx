@@ -1,6 +1,6 @@
-import { getRangeChartById } from "@/app/serverUtils/serverRequests/chart";
-import RangeChartUpdateForm from "@/app/components/client/RangeChartUpdateForm";
-import RangeChartCreateForm from "@/app/components/client/RangeChartCreateForm";
+import { getRangeChartById } from "@/server/serverRequests/chart";
+import RangeChartUpdateForm from "@/components/client/RangeChartUpdateForm";
+import RangeChartCreateForm from "@/components/client/RangeChartCreateForm";
 
 export default async function EditPokerHandChartPage({
   params,

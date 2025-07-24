@@ -1,0 +1,90 @@
+"use client";
+
+import { Position, Positions, PositionsArray } from "@/config/position";
+import { useState } from "react";
+import Button from "./Button";
+import { ChartType, ChartTypes, ChartTypesArray } from "@/config/chart";
+import { useGetRangeCharts } from "@/hooks/useRangeChart";
+import PokerHandChart from "./PokerHandChart";
+
+export default function LiveRangeChart() {
+  const [forPosition, setForPosition] = useState<Position>(Positions.BTN);
+  const [againstPosition, setAgainstPosition] = useState<Position>(
+    forPosition === Positions.BTN ? Positions.UTG : Positions.BTN
+  );
+  const [auto, setAuto] = useState(true);
+  const [type, setType] = useState<ChartType>(ChartTypes.rfi);
+
+  const { data: charts } = useGetRangeCharts({
+    page: 0,
+    pageSize: 1,
+    forPosition,
+    againstPosition: ![ChartTypes.frfi, ChartTypes.bet3].includes(type)
+      ? undefined
+      : againstPosition,
+    type,
+  });
+
+  const chart = charts && charts.length > 0 ? charts[0] : null;
+
+  return (
+    <div className="flex flex-col items-end gap-4">
+      <div className="flex items-center gap-2">
+        <label htmlFor="position">Position</label>
+        <select
+          id="position"
+          value={forPosition}
+          onChange={(e) => setForPosition(e.target.value as Position)}
+        >
+          {PositionsArray.map((position) => (
+            <option key={position} value={position}>
+              {position}
+            </option>
+          ))}
+        </select>
+        <Button
+          className={`${auto ? "bg-green-500" : "bg-red-500"}`}
+          onClick={() => setAuto(!auto)}
+        >
+          Auto
+        </Button>
+      </div>
+      <div className="flex flex-row gap-2">
+        {ChartTypesArray.map((t) => (
+          <Button
+            key={t}
+            className={`${type === t ? "bg-orange-500" : ""}`}
+            onClick={() => setType(t)}
+          >
+            {t.toUpperCase()}
+          </Button>
+        ))}
+      </div>
+      {(type === ChartTypes.frfi || type === ChartTypes.bet3) && (
+        <div className="flex flex-row gap-2">
+          <label htmlFor="againstPosition">Against Position</label>
+          <select
+            id="againstPosition"
+            value={againstPosition}
+            onChange={(e) => setAgainstPosition(e.target.value as Position)}
+          >
+            {PositionsArray.filter((position) => position !== forPosition).map(
+              (position) => (
+                <option key={position} value={position}>
+                  {position}
+                </option>
+              )
+            )}
+          </select>
+        </div>
+      )}
+      {chart && (
+        <PokerHandChart
+          value={chart.hands}
+          editable={false}
+          showColorExplanation
+        />
+      )}
+    </div>
+  );
+}

@@ -1,9 +1,16 @@
+import { PositionsArray } from "@/config/position";
+import {
+  ChartActionsArray,
+  ChartTypesArray,
+  ChartHandsArray,
+} from "@/config/chart";
 import {
   getRangeChartById,
   updateRangeChart,
   deleteRangeChart,
   RangeChartUpdateDTO,
-} from "@/app/serverUtils/serverRequests/chart";
+} from "@/server/serverRequests/chart";
+import { z } from "zod";
 
 export async function GET(
   request: Request,
@@ -15,14 +22,30 @@ export async function GET(
   return Response.json(chart);
 }
 
+const chartUpdateSchema = z.object({
+  type: z.enum(ChartTypesArray).optional(),
+  forPosition: z.enum(PositionsArray).optional(),
+  againstPosition: z.enum(PositionsArray).nullable().optional(),
+  hands: z
+    .array(
+      z.object({
+        hand: z.enum(ChartHandsArray),
+        action: z.enum(ChartActionsArray),
+      })
+    )
+    .optional(),
+}) satisfies z.ZodType<RangeChartUpdateDTO>;
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const body: RangeChartUpdateDTO = await request.json();
-    const { id } = await params;
-    await updateRangeChart({ id, data: body });
+    await params;
+    const body = await request.json();
+    const parsedBody = chartUpdateSchema.parse(body);
+    const { id } = z.object({ id: z.string() }).parse(params);
+    await updateRangeChart({ id, data: parsedBody });
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error(error);
@@ -35,7 +58,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    await params;
+    const { id } = z.object({ id: z.string() }).parse(params);
     await deleteRangeChart(id);
     return new Response(null, { status: 204 });
   } catch (error) {

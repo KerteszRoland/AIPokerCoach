@@ -1,4 +1,4 @@
-import { getMostRecentHand } from "@/app/serverUtils/serverRequests/hand";
+import { getMostRecentHand } from "@/server/serverRequests/hand";
 
 export async function GET() {
   const hand = await getMostRecentHand();

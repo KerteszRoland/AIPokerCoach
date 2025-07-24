@@ -2,22 +2,34 @@ import {
   createRangeChart,
   RangeChartCreateDTO,
   RangeChartFullFromDb,
-} from "@/app/serverUtils/serverRequests/chart";
-import db from "@/app/serverUtils/db";
-import { Position } from "@/app/config/position";
-import { ChartType } from "@/app/config/chart";
+} from "@/server/serverRequests/chart";
+import db from "@/server/db";
+import { Position } from "@/config/position";
+import {
+  ChartActionsArray,
+  ChartHandsArray,
+  ChartTypesArray,
+} from "@/config/chart";
+import { PositionsArray } from "@/config/position";
+import { ChartType } from "@/config/chart";
+import { z } from "zod";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const page = searchParams.get("page") ?? "0";
-  const pageSize = searchParams.get("pageSize") ?? "10";
-  const forPosition = searchParams.get("forPosition");
-  const againstPosition = searchParams.get("againstPosition");
-  const type = searchParams.get("type");
+  const entries = Object.fromEntries(searchParams.entries());
+  const { page, pageSize, forPosition, againstPosition, type } = z
+    .object({
+      page: z.coerce.number().optional().default(0),
+      pageSize: z.coerce.number().optional().default(10),
+      forPosition: z.enum(PositionsArray).optional(),
+      againstPosition: z.enum(PositionsArray).nullable().optional(),
+      type: z.enum(ChartTypesArray).optional(),
+    })
+    .parse(entries);
 
   const charts = await db.query.RangeCharts.findMany({
-    limit: pageSize ? parseInt(pageSize) : 10,
-    offset: page ? parseInt(page) * parseInt(pageSize) : 0,
+    limit: pageSize,
+    offset: page * pageSize,
     with: {
       hands: true,
     },
@@ -37,10 +49,23 @@ export async function GET(request: Request) {
   return Response.json(chartsFull);
 }
 
+const chartCreateSchema = z.object({
+  type: z.enum(ChartTypesArray),
+  forPosition: z.enum(PositionsArray),
+  againstPosition: z.enum(PositionsArray).nullable(),
+  hands: z.array(
+    z.object({
+      hand: z.enum(ChartHandsArray),
+      action: z.enum(ChartActionsArray),
+    })
+  ),
+}) satisfies z.ZodType<RangeChartCreateDTO>;
+
 export async function POST(request: Request) {
   try {
-    const body: RangeChartCreateDTO = await request.json();
-    const chart = await createRangeChart(body);
+    const body = await request.json();
+    const parsedBody = chartCreateSchema.parse(body);
+    const chart = await createRangeChart(parsedBody);
     return Response.json(chart, { status: 201 });
   } catch (error) {
     console.error(error);
