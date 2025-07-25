@@ -2,10 +2,10 @@
 import { CommunityCardAction } from "@/app/review/[id]/page";
 import Card from "@/components/server/Card";
 import MiniPokerCard from "@/components/server/MiniPokerCard";
-import { getCardDisplay, getCardSuitColor } from "@/config/card";
 import { ActionFull, HandFull } from "@/server/serverRequests/hand";
 import { useEffect, useRef, useState } from "react";
 import CoachReviewCard from "../server/CoachReviewCard";
+import { HandReview } from "@/config/review";
 import PokerTable from "../server/PokerTable";
 
 // Map action names to display colors
@@ -42,16 +42,31 @@ const getActionColor = (actionName: string) => {
 export default function ReplayPageClient({
   hand,
   replayActions,
+  handReview,
 }: {
   hand: HandFull;
-  replayActions: {
-    action: ActionFull | null;
-    communityCard: CommunityCardAction | null;
-  }[];
+  replayActions: (
+    | {
+        action: ActionFull;
+        communityCard: null;
+      }
+    | {
+        action: null;
+        communityCard: CommunityCardAction;
+      }
+  )[];
+  handReview: HandReview;
 }) {
   const actionsContainerRef = useRef<HTMLDivElement>(null);
   const [currentActionIndex, setCurrentActionIndex] = useState(0);
   const hero = hand.players.find((player) => player.isHero)!;
+
+  const handReviewForCurrentAction = handReview.action_reviews.find(
+    (x) => x.action_number === currentActionIndex + 1
+  );
+
+  const coachDescription = handReviewForCurrentAction?.analysis || "";
+  const coachRating = handReviewForCurrentAction?.rating ?? undefined;
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -99,8 +114,11 @@ export default function ReplayPageClient({
 
   return (
     <div className="flex flex-row justify-between gap-4 w-full px-8">
-      <div className="flex flex-col items-center gap-4 max-w-[400px]">
-        <CoachReviewCard />
+      <div className="flex flex-col items-center gap-4 w-[400px]">
+        <CoachReviewCard
+          coachDescription={coachDescription}
+          coachRating={coachRating}
+        />
         <Card
           className="w-full"
           Header={
@@ -270,61 +288,6 @@ function ReplayActionElement({
   );
 }
 
-function getActionAsText(action: ActionFull) {
-  const isHeroAction = action.player.isHero;
-  let text: string = action.name;
-
-  // Convert action names to more readable format
-  switch (action.name) {
-    case "PostSmallBlind":
-      text = "Posts SB";
-      break;
-    case "PostBigBlind":
-      text = "Posts BB";
-      break;
-    case "RaiseAndAllIn":
-      text = "All-in";
-      break;
-    case "CallAndAllIn":
-      text = "All-in";
-      break;
-    case "BetAndAllIn":
-      text = "All-in";
-      break;
-    case "Muck":
-      text = "Mucks";
-      break;
-    case "Fold":
-      text = "Folds";
-      break;
-    case "Call":
-      text = "Calls";
-      break;
-    case "Raise":
-      text = "Raises";
-      break;
-    case "Bet":
-      text = "Bets";
-      break;
-    case "Shows":
-      text = `Shows ${action.card1} ${action.card2} (${action.text})`;
-      break;
-    case "Check":
-    default:
-      text = action.name;
-      break;
-  }
-
-  // Add amount information
-  if (action.amount && action.amount2) {
-    text = `${text} to $${action.amount2}`;
-  } else if (action.amount) {
-    text = `${text} $${action.amount}`;
-  }
-
-  return text;
-}
-
 function ActionContent({ action }: { action: ActionFull }) {
   const isHeroAction = action.player.isHero;
   let text: string = action.name;
@@ -377,6 +340,7 @@ function ActionContent({ action }: { action: ActionFull }) {
         <span className="font-bold">
           {isHeroAction ? "You" : action.player.name}
         </span>
+        <span className="text-xs">({action.player.position})</span>
         <span>{text}</span>
         {action.name === "Shows" && (
           <div className="flex flex-row items-center justify-center gap-1">

@@ -5,6 +5,11 @@ import { ActionFull, getHandById } from "@/server/serverRequests/hand";
 import { PageNotFoundError } from "next/dist/shared/lib/utils";
 import { notFound } from "next/navigation";
 import ReplayPageClient from "@/components/client/ReplayPageClient";
+import { promptAI } from "@/server/genAI";
+import { getPromptForHandReview } from "@/utils/getPromptForHandReview";
+import path from "path";
+import fs from "fs";
+import { reviewSchema } from "@/config/review";
 
 type CommunityCardFlop = {
   flop1: CardType;
@@ -39,10 +44,16 @@ export default async function ReviewIdPage({
       return notFound();
     }
 
-    const replayActions: {
-      action: ActionFull | null;
-      communityCard: CommunityCardAction | null;
-    }[] = [];
+    const replayActions: (
+      | {
+          action: ActionFull;
+          communityCard: null;
+        }
+      | {
+          action: null;
+          communityCard: CommunityCardAction;
+        }
+    )[] = [];
 
     hand.actions
       .filter(
@@ -89,7 +100,27 @@ export default async function ReviewIdPage({
         replayActions.push({ action: action, communityCard: null });
       });
 
-    return <ReplayPageClient hand={hand} replayActions={replayActions} />;
+    /*
+    const handReview = await promptAI(
+      getPromptForHandReview(hand, replayActions)
+    );*/
+
+    const handReviewResponse = fs.readFileSync(
+      path.join(process.cwd(), "src/server/prompts/review_example.txt"),
+      "utf8"
+    );
+    const strippedReview = handReviewResponse
+      .replace(/```json/g, "")
+      .replace(/```/g, "");
+    const handReview = reviewSchema.parse(JSON.parse(strippedReview));
+
+    return (
+      <ReplayPageClient
+        hand={hand}
+        replayActions={replayActions}
+        handReview={handReview}
+      />
+    );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.message === "NEXT_REDIRECT") {
