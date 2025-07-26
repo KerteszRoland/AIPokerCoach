@@ -204,7 +204,9 @@ export default function ReplayPageClient({
           </div>
         </Card>
       </div>
-      <PokerTable />
+      <PokerTable
+        handFull={hand}
+      />
     </div>
   );
 }
