@@ -4,7 +4,7 @@ import { getSession } from "./getSession";
 export default async function getSessionOrRedirect() {
   const session = await getSession();
 
-  if (!session) {
+  if (!session || !session.userId) {
     return redirect("/api/auth/signin");
   }
 

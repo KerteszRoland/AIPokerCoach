@@ -16,6 +16,7 @@ import {
   FaPause,
 } from "react-icons/fa";
 import { ScrollArea } from "../ui/scroll-area";
+import { moneyToBB } from "@/config/action";
 
 // Map action names to display colors
 const getActionColor = (actionName: string) => {
@@ -121,6 +122,7 @@ export default function ReplayPageClient({
     setCurrentActionIndex(replayActions.length - 1);
   };
 
+
   return (
     <div className="flex flex-row justify-between gap-4 w-full px-8">
       <div className="flex flex-col items-center gap-4 w-[400px]">
@@ -159,6 +161,7 @@ export default function ReplayPageClient({
                       communityCard={actionOrCommunityCard.communityCard}
                       index={index}
                       currentActionIndex={currentActionIndex}
+                      smallBlind={hand.smallBlind}
                       onClick={() => {
                         setCurrentActionIndex(index);
                       }}
@@ -206,6 +209,7 @@ export default function ReplayPageClient({
       </div>
       <PokerTable
         handFull={hand}
+        replayActions={replayActions.slice(0, currentActionIndex + 1)}
       />
     </div>
   );
@@ -217,12 +221,14 @@ function ReplayActionElement({
   index,
   currentActionIndex,
   onClick,
+  smallBlind,
 }: {
   action: ActionFull | null;
   communityCard: CommunityCardAction | null;
   index: number;
   currentActionIndex: number;
   onClick?: () => void;
+  smallBlind: number;
 }) {
   const elementRef = useRef<HTMLDivElement>(null);
   const isCurrentAction = index === currentActionIndex;
@@ -286,7 +292,7 @@ function ReplayActionElement({
           {isCurrentAction && (
             <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
           )}
-          <ActionContent action={action} />
+          <ActionContent action={action} smallBlind={smallBlind} />
           {isCurrentAction && false && (
             <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-green-500 text-white px-3 py-1 rounded text-sm font-bold">
               ok
@@ -298,7 +304,13 @@ function ReplayActionElement({
   );
 }
 
-function ActionContent({ action }: { action: ActionFull }) {
+function ActionContent({
+  action,
+  smallBlind,
+}: {
+  action: ActionFull;
+  smallBlind: number;
+}) {
   const isHeroAction = action.player.isHero;
   let text: string = action.name;
 
@@ -339,9 +351,9 @@ function ActionContent({ action }: { action: ActionFull }) {
 
   // Add amount information
   if (action.amount && action.amount2) {
-    text = `${text} to $${action.amount2}`;
+    text = `${text} to ${moneyToBB(action.amount2, smallBlind)}BB`;
   } else if (action.amount) {
-    text = `${text} $${action.amount}`;
+    text = `${text} ${moneyToBB(action.amount, smallBlind)}BB`;
   }
 
   return (
@@ -360,7 +372,7 @@ function ActionContent({ action }: { action: ActionFull }) {
         )}
       </div>
       {action.text && (
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-800">
           <span>({action.text})</span>
         </div>
       )}

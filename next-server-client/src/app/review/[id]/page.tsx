@@ -44,7 +44,28 @@ export default async function ReviewIdPage({
       return notFound();
     }
 
-    const replayActions: (
+    const insertCommunityCardActionAfterIndex = (
+      replayActions: (
+        | {
+            action: ActionFull;
+            communityCard: null;
+          }
+        | {
+            action: null;
+            communityCard: CommunityCardAction;
+          }
+      )[],
+      index: number,
+      communityCard: CommunityCardAction
+    ) => {
+      return [
+        ...replayActions.slice(0, index + 1),
+        { action: null, communityCard },
+        ...replayActions.slice(index + 1),
+      ];
+    };
+
+    let replayActions: (
       | {
           action: ActionFull;
           communityCard: null;
@@ -53,52 +74,93 @@ export default async function ReviewIdPage({
           action: null;
           communityCard: CommunityCardAction;
         }
-    )[] = [];
-
-    hand.actions
+    )[] = [...hand.actions]
       .filter(
-        (action) =>
-          ![
-            ActionNames.Connected,
-            ActionNames.Disconnected,
-            ActionNames.SitsOut,
-            ActionNames.Join,
-            ActionNames.Leave,
-          ].includes(action.name)
+        (x) =>
+          !["Connected", "Disconnected", "SitsOut", "Join", "Leave"].includes(
+            x.name
+          )
       )
-      .forEach((action) => {
-        if (action.sequence === 0) {
-          switch (action.street) {
-            case Streets.Flop:
-              replayActions.push({
-                action: null,
-                communityCard: {
-                  flop1: hand.communityCards!.flop1!,
-                  flop2: hand.communityCards!.flop2!,
-                  flop3: hand.communityCards!.flop3!,
-                },
-              });
-              break;
-            case Streets.Turn:
-              replayActions.push({
-                action: null,
-                communityCard: {
-                  turn: hand.communityCards!.turn!,
-                },
-              });
-              break;
-            case Streets.River:
-              replayActions.push({
-                action: null,
-                communityCard: {
-                  river: hand.communityCards!.river!,
-                },
-              });
-              break;
-          }
+      .map((x) => ({ action: x, communityCard: null }));
+
+    if (hand.communityCards?.flop1) {
+      const highestSequence = hand.actions
+        .filter((x) => x.street === Streets.Preflop)
+        .map((x) => x.sequence)
+        .reduce((max, sequence) => Math.max(max, sequence), -Infinity);
+
+      let insertIndex = replayActions.findIndex(
+        (x) =>
+          x.action?.sequence === highestSequence &&
+          x.action?.street === Streets.Preflop
+      );
+
+      if (insertIndex === -1) {
+        insertIndex = replayActions.findIndex(
+          (x) => x.action?.street !== Streets.Showdown
+        );
+      }
+
+      replayActions = insertCommunityCardActionAfterIndex(
+        replayActions,
+        insertIndex,
+        {
+          flop1: hand.communityCards!.flop1!,
+          flop2: hand.communityCards!.flop2!,
+          flop3: hand.communityCards!.flop3!,
         }
-        replayActions.push({ action: action, communityCard: null });
-      });
+      );
+    }
+
+    if (hand.communityCards?.turn) {
+      const highestSequence = hand.actions
+        .filter((x) => x.street === Streets.Flop)
+        .map((x) => x.sequence)
+        .reduce((max, sequence) => Math.max(max, sequence), -Infinity);
+
+      let insertIndex = replayActions.findIndex(
+        (x) =>
+          x.action?.sequence === highestSequence &&
+          x.action?.street === Streets.Flop
+      );
+
+      if (insertIndex === -1) {
+        insertIndex = replayActions.findIndex(
+          (x) => x.action?.street !== Streets.Showdown
+        );
+      }
+
+      replayActions = insertCommunityCardActionAfterIndex(
+        replayActions,
+        insertIndex,
+        { turn: hand.communityCards!.turn! }
+      );
+    }
+
+    if (hand.communityCards?.river) {
+      const highestSequence = hand.actions
+        .filter((x) => x.street === Streets.Turn)
+        .map((x) => x.sequence)
+        .reduce((max, sequence) => Math.max(max, sequence), -Infinity);
+
+      let insertIndex = replayActions.findIndex(
+        (x) =>
+          x.action?.sequence === highestSequence &&
+          x.action?.street === Streets.Turn
+      );
+
+      if (insertIndex === -1) {
+        insertIndex = replayActions.findIndex(
+          (x) => x.action?.street !== Streets.Showdown
+        );
+      }
+
+      replayActions = insertCommunityCardActionAfterIndex(
+        replayActions,
+        insertIndex,
+        { river: hand.communityCards!.river! }
+      );
+    }
 
     /*
     const handReview = await promptAI(
