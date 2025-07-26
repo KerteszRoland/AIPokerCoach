@@ -6,7 +6,7 @@ import {
   HandPlayerCards,
   HandPlayerFull,
 } from "@/server/serverRequests/hand";
-import { FaFistRaised, FaHandPaper, FaUserAlt } from "react-icons/fa";
+import { FaHandPaper, FaUserAlt } from "react-icons/fa";
 import MiniPokerCard from "./MiniPokerCard";
 import { CommunityCardAction } from "@/app/review/[id]/page";
 import { moneyToBB } from "@/config/action";
@@ -48,7 +48,7 @@ export default function PokerTable({
   )[];
 }) {
   const middleOfTheTable = { x: 60, y: 32 };
-  const hero = handFull.players.find((player) => player.isHero);
+  const hero = handFull.players.find((player) => player.isHero)!;
   const players = [...handFull.players].sort(
     (a, b) =>
       (a.position
@@ -101,17 +101,17 @@ export default function PokerTable({
             "CallAndAllIn",
             "PostSmallBlind",
             "PostBigBlind",
-          ].includes(action.action?.name!) &&
-          action.action?.amount !== null
+          ].includes(action.action.name) &&
+          action.action.amount !== null
         ) {
-          return acc + action.action!.amount!;
+          return acc + action.action.amount;
         }
 
         if (
-          ["Raise", "RaiseAndAllIn"].includes(action.action?.name!) &&
-          action.action?.amount2 !== null
+          ["Raise", "RaiseAndAllIn"].includes(action.action.name) &&
+          action.action.amount2 !== null
         ) {
-          return acc + action.action!.amount2!;
+          return acc + action.action.amount2;
         }
 
         return acc;
@@ -166,7 +166,7 @@ export default function PokerTable({
           <PokerPlayer
             key={`player-${player.seat}`}
             player={player}
-            heroSeat={hero?.seat!}
+            heroSeat={hero.seat}
             playerUIPositions={playerUIPositions}
             isHighlighted={lastAction.action?.player.id === player.id}
             isFolded={
@@ -203,7 +203,7 @@ export default function PokerTable({
                 <PokerPlayerCards
                   playerCards={player.cards}
                   playerUIPosition={
-                    playerUIPositions[getRelativeSeat(player.seat, hero?.seat!)]
+                    playerUIPositions[getRelativeSeat(player.seat, hero.seat)]
                   }
                 />
               )}
@@ -213,7 +213,7 @@ export default function PokerTable({
         {communityCards && <CommunityCards communityCards={communityCards} />}
         <PokerDealerButton
           seat={dealerSeat}
-          heroSeat={hero?.seat!}
+          heroSeat={hero.seat}
           playerUIPositions={playerUIPositions}
         />
 
@@ -270,7 +270,7 @@ export default function PokerTable({
               return acc;
             }, 0);
 
-          const relativeSeat = getRelativeSeat(player.seat, hero?.seat!);
+          const relativeSeat = getRelativeSeat(player.seat, hero.seat);
           const { x, y } = getChipsUIPosition(
             middleOfTheTable,
             playerUIPositions[relativeSeat]
