@@ -7,6 +7,15 @@ import { useEffect, useRef, useState } from "react";
 import CoachReviewCard from "../server/CoachReviewCard";
 import { HandReview } from "@/config/review";
 import PokerTable from "../server/PokerTable";
+import Button from "./Button";
+import {
+  FaArrowLeft,
+  FaArrowRight,
+  FaChevronLeft,
+  FaChevronRight,
+  FaPause,
+} from "react-icons/fa";
+import { ScrollArea } from "../ui/scroll-area";
 
 // Map action names to display colors
 const getActionColor = (actionName: string) => {
@@ -138,61 +147,60 @@ export default function ReplayPageClient({
             </div>
           }
         >
-          <div
-            className="flex flex-col gap-2 max-h-40 min-h-40 overflow-y-auto px-2"
-            ref={actionsContainerRef}
-          >
-            {replayActions
-              .slice(0, currentActionIndex + 1)
-              .map((actionOrCommunityCard, index) => {
-                return (
-                  <ReplayActionElement
-                    key={`action-${index}`}
-                    action={actionOrCommunityCard.action}
-                    communityCard={actionOrCommunityCard.communityCard}
-                    index={index}
-                    currentActionIndex={currentActionIndex}
-                    onClick={() => {
-                      setCurrentActionIndex(index);
-                    }}
-                  />
-                );
-              })}
-          </div>
+          <ScrollArea ref={actionsContainerRef}>
+            <div className="flex flex-col gap-2 max-h-40 min-h-40 px-2">
+              {replayActions
+                .slice(0, currentActionIndex + 1)
+                .map((actionOrCommunityCard, index) => {
+                  return (
+                    <ReplayActionElement
+                      key={`action-${index}`}
+                      action={actionOrCommunityCard.action}
+                      communityCard={actionOrCommunityCard.communityCard}
+                      index={index}
+                      currentActionIndex={currentActionIndex}
+                      onClick={() => {
+                        setCurrentActionIndex(index);
+                      }}
+                    />
+                  );
+                })}
+            </div>
+          </ScrollArea>
 
           {/* Navigation controls */}
           <div className="flex justify-center gap-2 pt-4">
-            <button
+            <Button
               onClick={goToStart}
               disabled={currentActionIndex === 0}
               className="px-4 py-2 rounded bg-gray-200 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ≪
-            </button>
-            <button
+              <FaArrowLeft />
+            </Button>
+            <Button
               onClick={goToPrevious}
               disabled={currentActionIndex === 0}
               className="px-4 py-2 rounded bg-gray-200 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ←
-            </button>
-            <button className="px-4 py-2 rounded bg-gray-200 text-gray-800">
-              ⏸
-            </button>
-            <button
+              <FaChevronLeft />
+            </Button>
+            <Button className="px-4 py-2 rounded bg-gray-200 text-gray-800">
+              <FaPause />
+            </Button>
+            <Button
               onClick={goToNext}
               disabled={currentActionIndex === replayActions.length - 1}
               className="px-4 py-2 rounded bg-gray-200 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              →
-            </button>
-            <button
+              <FaChevronRight />
+            </Button>
+            <Button
               onClick={goToEnd}
               disabled={currentActionIndex === replayActions.length - 1}
               className="px-4 py-2 rounded bg-gray-200 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ≫
-            </button>
+              <FaArrowRight />
+            </Button>
           </div>
         </Card>
       </div>

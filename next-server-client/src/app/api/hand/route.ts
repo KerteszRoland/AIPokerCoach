@@ -3,8 +3,7 @@ import db from "@/server/db";
 import { Hands } from "@/db/schema";
 import { getHands } from "@/server/serverRequests/hand";
 import { eq } from "drizzle-orm";
-import { getServerSession } from "next-auth";
-import authOptions from "../auth/[...nextauth]/options";
+import { getUserIdFromSession } from "@/server/getUserIdFromSession";
 
 export async function POST(request: Request) {
   try {
@@ -32,15 +31,15 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.userId) {
-    console.log("No session or userId", session);
+  const userId = await getUserIdFromSession();
+  if (!userId) {
+    console.log("No userId");
     return new Response(null, { status: 401 });
   }
-  console.log("Session and userId", session.userId);
+  console.log("userId", userId);
   const { searchParams } = new URL(request.url);
   const page = Number(searchParams.get("page") ?? "0");
   const pageSize = Number(searchParams.get("pageSize") ?? "10");
-  const hands = await getHands(page, pageSize, session.userId);
+  const hands = await getHands(page, pageSize, userId);
   return Response.json(hands);
 }

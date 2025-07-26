@@ -1,5 +1,7 @@
-import { FaUser } from "react-icons/fa";
+import { FaMeh, FaThumbsDown, FaThumbsUp, FaUser } from "react-icons/fa";
 import Card from "./Card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 
 export default function CoachReviewCard({
   coachName = "AI Coach",
@@ -12,19 +14,23 @@ export default function CoachReviewCard({
 }) {
   return (
     <Card className="w-full relative">
-      <div className="absolute top-[-10px] right-0">
-        {coachRating && (
-          <span
-            className={`absolute right-0 text-md font-semibold px-2 py-1 rounded-full transform translate-x-1/2 ${
+      <div className="absolute top-0 right-0">
+        {coachRating && !["None", "Neutral"].includes(coachRating) && (
+          <Badge
+            className={`absolute top-0 right-0 font-semibold transform translate-x-1/2 translate-y-[-25%] ${
               coachRating === "Good"
                 ? "bg-green-200 text-green-800"
-                : coachRating === "Neutral"
-                ? "bg-yellow-200 text-yellow-800"
                 : "bg-red-200 text-red-800"
             }`}
           >
-            {coachRating}
-          </span>
+            <div>
+              {coachRating === "Good" ? (
+                <FaThumbsUp size={24} />
+              ) : (
+                <FaThumbsDown size={24} />
+              )}
+            </div>
+          </Badge>
         )}
       </div>
       <div className="flex flex-row gap-4">
@@ -32,9 +38,9 @@ export default function CoachReviewCard({
           <FaUser className="h-10 w-10 text-orange-300" />
           <p className="text-md text-center">{coachName}</p>
         </div>
-        <div className="text-sm h-[100px] overflow-y-auto">
+        <ScrollArea className="text-sm h-[100px] rounded-md  px-4 w-full">
           {coachDescription}
-        </div>
+        </ScrollArea>
       </div>
     </Card>
   );
