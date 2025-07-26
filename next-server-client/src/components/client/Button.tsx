@@ -26,7 +26,7 @@ export default function Button({
     return (
       <ButtonShad
         asChild={asChild}
-        className={className ?? undefined}
+        className={`cursor-pointer ${className ?? ""}`}
         variant={variant}
       >
         <Link
@@ -42,7 +42,7 @@ export default function Button({
   return (
     <ButtonShad
       asChild={asChild}
-      className={`${className}`}
+      className={`cursor-pointer ${className ?? ""}`}
       onClick={onClick}
       variant={variant}
       {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}

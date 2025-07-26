@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-export type HandReview = z.infer<typeof reviewSchema>;
+export type HandReview = z.infer<typeof handReviewSchema>;
 
-export const reviewSchema = z.object({
+export const handReviewCreateSchema = z.object({
   overall_summary: z.string(),
   action_reviews: z.array(
     z.object({
@@ -14,4 +14,11 @@ export const reviewSchema = z.object({
     })
   ),
   key_takeaways: z.array(z.string()),
+});
+
+export const handReviewSchema = z.object({
+  id: z.string(),
+  handId: z.string(),
+  content: handReviewCreateSchema,
+  createdAt: z.string(),
 });

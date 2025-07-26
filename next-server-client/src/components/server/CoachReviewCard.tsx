@@ -1,16 +1,22 @@
-import { FaMeh, FaThumbsDown, FaThumbsUp, FaUser } from "react-icons/fa";
+import { FaThumbsDown, FaThumbsUp, FaUser } from "react-icons/fa";
 import Card from "./Card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import Loading from "./Loading";
+import Button from "../client/Button";
 
 export default function CoachReviewCard({
   coachName = "AI Coach",
-  coachDescription = "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.",
+  coachDescription,
   coachRating,
+  onReview,
+  isReviewLoading,
 }: {
   coachName?: string;
-  coachDescription?: string;
+  coachDescription: string | null;
   coachRating?: string;
+  onReview: () => void;
+  isReviewLoading: boolean;
 }) {
   return (
     <Card className="w-full relative">
@@ -38,8 +44,16 @@ export default function CoachReviewCard({
           <FaUser className="h-10 w-10 text-orange-300" />
           <p className="text-md text-center">{coachName}</p>
         </div>
-        <ScrollArea className="text-sm h-[100px] rounded-md  px-4 w-full">
-          {coachDescription}
+
+        <ScrollArea className="text-sm h-[100px] rounded-md  px-4 w-full whitespace-pre-wrap">
+          {coachDescription ??
+            (isReviewLoading ? (
+              <Loading size={50} />
+            ) : (
+              <Button onClick={onReview} className="bg-green-500">
+                Review
+              </Button>
+            ))}
         </ScrollArea>
       </div>
     </Card>

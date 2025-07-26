@@ -1,7 +1,15 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
+import fs from "fs";
 
 export async function promptAI(prompt: string) {
+  /*const aiResponseExample = fs.readFileSync(
+    "./src/server/prompts/review_example.txt",
+    "utf8"
+  );
+  return aiResponseExample;
+  */
+
   dotenv.config();
   if (!process.env.GOOGLE_GEMINI_API) {
     throw new Error("GOOGLE_GEMINI_API is not set");

@@ -10,6 +10,7 @@ import { FaHandPaper, FaUserAlt } from "react-icons/fa";
 import MiniPokerCard from "./MiniPokerCard";
 import { CommunityCardAction } from "@/app/review/[id]/page";
 import { moneyToBB } from "@/config/action";
+import { ReplayAction } from "@/server/getReplayActionsFromHand";
 
 function getChipsUIPosition(
   middleOfTheTable: { x: number; y: number },
@@ -36,16 +37,7 @@ export default function PokerTable({
   replayActions,
 }: {
   handFull: HandFull;
-  replayActions: (
-    | {
-        action: ActionFull;
-        communityCard: null;
-      }
-    | {
-        action: null;
-        communityCard: CommunityCardAction;
-      }
-  )[];
+  replayActions: ReplayAction[];
 }) {
   const middleOfTheTable = { x: 60, y: 32 };
   const hero = handFull.players.find((player) => player.isHero)!;
@@ -82,7 +74,6 @@ export default function PokerTable({
       : lastPlayerAction?.action?.street;
 
   const lastStreetActions = replayActions.filter((action) => {
-    console.log(action.action?.street, lastStreet);
     return (
       action.action?.street === lastStreet ||
       (action.action?.street === "pre" && lastStreet === "preflop")

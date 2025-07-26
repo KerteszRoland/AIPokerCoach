@@ -5,6 +5,7 @@ import { getCardDisplay } from "@/config/card";
 import { ActionFull, HandFull } from "@/server/serverRequests/hand";
 import path from "path";
 import fs from "fs";
+import { ReplayAction } from "./getReplayActionsFromHand";
 
 function getCommunityCardAsText(communityCard: CommunityCardAction) {
   if ("flop1" in communityCard) {
@@ -119,16 +120,7 @@ function getActionAsText(action: ActionFull) {
 
 export function getPromptForHandReview(
   hand: HandFull,
-  replayActions: (
-    | {
-        action: ActionFull;
-        communityCard: null;
-      }
-    | {
-        action: null;
-        communityCard: CommunityCardAction;
-      }
-  )[]
+  replayActions: ReplayAction[]
 ) {
   const hero = hand.players.find((player) => player.isHero)!;
 

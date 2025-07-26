@@ -5,7 +5,7 @@ import MiniPokerCard from "@/components/server/MiniPokerCard";
 import { ActionFull, HandFull } from "@/server/serverRequests/hand";
 import { useEffect, useRef, useState } from "react";
 import CoachReviewCard from "../server/CoachReviewCard";
-import { HandReview } from "@/config/review";
+import { HandReview } from "@/utils/validations/handReviewValidationSchema";
 import PokerTable from "../server/PokerTable";
 import Button from "./Button";
 import {
@@ -17,6 +17,8 @@ import {
 } from "react-icons/fa";
 import { ScrollArea } from "../ui/scroll-area";
 import { moneyToBB } from "@/config/action";
+import { ReplayAction } from "@/server/getReplayActionsFromHand";
+import { useCreateHandReview, useGetHandReview } from "@/hooks/useHandReview";
 
 // Map action names to display colors
 const getActionColor = (actionName: string) => {
@@ -52,30 +54,46 @@ const getActionColor = (actionName: string) => {
 export default function ReplayPageClient({
   hand,
   replayActions,
-  handReview,
+  handReview: initialHandReview,
 }: {
   hand: HandFull;
-  replayActions: (
-    | {
-        action: ActionFull;
-        communityCard: null;
-      }
-    | {
-        action: null;
-        communityCard: CommunityCardAction;
-      }
-  )[];
-  handReview: HandReview;
+  replayActions: ReplayAction[];
+  handReview: HandReview | null;
 }) {
+  const { mutate: createHandReview, isPending: isReviewCreateLoading } =
+    useCreateHandReview();
+  const {
+    data: handReview,
+    isLoading: isReviewLoading,
+    refetch: refetchHandReview,
+    error: reviewError,
+  } = useGetHandReview({
+    id: hand.id,
+    initialData: initialHandReview ?? undefined,
+  });
+
   const actionsContainerRef = useRef<HTMLDivElement>(null);
   const [currentActionIndex, setCurrentActionIndex] = useState(0);
   const hero = hand.players.find((player) => player.isHero)!;
 
-  const handReviewForCurrentAction = handReview.action_reviews.find(
+  const handReviewForCurrentAction = handReview?.content?.action_reviews.find(
     (x) => x.action_number === currentActionIndex + 1
   );
 
-  const coachDescription = handReviewForCurrentAction?.analysis || "";
+  const getCoachDescription = () => {
+    if (currentActionIndex === 0) {
+      return handReview?.content.overall_summary ?? "I analyzed the hand";
+    }
+    if (currentActionIndex === replayActions.length - 1) {
+      return (
+        "Key takeaways:\n" +
+        handReview?.content.key_takeaways.map((x) => "\t• " + x).join("\n")
+      );
+    }
+    return handReviewForCurrentAction?.analysis || "";
+  };
+
+  const coachDescription = getCoachDescription();
   const coachRating = handReviewForCurrentAction?.rating ?? undefined;
 
   useEffect(() => {
@@ -122,13 +140,29 @@ export default function ReplayPageClient({
     setCurrentActionIndex(replayActions.length - 1);
   };
 
+  const handleCreateHandReview = () => {
+    createHandReview(
+      { id: hand.id },
+      {
+        onSuccess: () => {
+          refetchHandReview();
+          setCurrentActionIndex(0);
+        },
+        onError: () => {
+          console.error("Failed to create hand review");
+        },
+      }
+    );
+  };
 
   return (
     <div className="flex flex-row justify-between gap-4 w-full px-8">
       <div className="flex flex-col items-center gap-4 w-[400px]">
         <CoachReviewCard
-          coachDescription={coachDescription}
+          coachDescription={handReview ? coachDescription : null}
           coachRating={coachRating}
+          onReview={handleCreateHandReview}
+          isReviewLoading={isReviewLoading || isReviewCreateLoading}
         />
         <Card
           className="w-full"
