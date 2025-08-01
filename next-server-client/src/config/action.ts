@@ -87,3 +87,7 @@ export enum PokerStreets {
   Turn = "turn",
   River = "river",
 }
+
+export function moneyToBB(money: number, smallBlind: number) {
+  return Math.round((money / (smallBlind * 2)) * 100) / 100;
+}

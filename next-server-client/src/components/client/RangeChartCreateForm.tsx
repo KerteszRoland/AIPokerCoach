@@ -14,6 +14,13 @@ import {
   ChartTypesArray,
 } from "@/config/chart";
 import { RangeChartCreateDTO } from "@/server/serverRequests/chart";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 export default function RangeChartCreateForm() {
   const router = useRouter();
@@ -54,27 +61,27 @@ export default function RangeChartCreateForm() {
     <div className="flex flex-col items-center gap-4">
       <h1 className="text-2xl font-bold">{"Create a new chart"}</h1>
       <label htmlFor="position">Position</label>
-      <select
-        id="position"
+      <Select
         value={forPosition}
-        onChange={(e) => setForPosition(e.target.value as Position)}
+        onValueChange={(value) => setForPosition(value as Position)}
       >
-        {PositionsArray.map((position) => (
-          <option key={position} value={position}>
-            {position}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger id="position">
+          <SelectValue placeholder="Select a position" />
+        </SelectTrigger>
+        <SelectContent>
+          {PositionsArray.map((position) => (
+            <SelectItem key={position} value={position}>
+              {position}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <label htmlFor="type">Type</label>
-      <select
-        id="type"
+      <Select
         value={type}
-        onChange={(e) => {
-          setType(e.target.value as ChartType);
-          if (
-            (e.target.value as ChartType) !== ChartTypes.frfi &&
-            (e.target.value as ChartType) !== ChartTypes.bet3
-          ) {
+        onValueChange={(value) => {
+          setType(value as ChartType);
+          if (value !== ChartTypes.frfi && value !== ChartTypes.bet3) {
             setAgainstPosition(null);
           } else {
             if (forPosition === Positions.BTN) {
@@ -85,28 +92,37 @@ export default function RangeChartCreateForm() {
           }
         }}
       >
-        {ChartTypesArray.map((type) => (
-          <option key={type} value={type}>
-            {type.toUpperCase()}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger id="type">
+          <SelectValue placeholder="Select a type" />
+        </SelectTrigger>
+        <SelectContent>
+          {ChartTypesArray.map((type) => (
+            <SelectItem key={type} value={type}>
+              {type.toUpperCase()}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       {(type === ChartTypes.frfi || type === ChartTypes.bet3) && (
         <>
           <label htmlFor="againstPosition">Against Position</label>
-          <select
-            id="againstPosition"
+          <Select
             value={againstPosition || ""}
-            onChange={(e) => setAgainstPosition(e.target.value as Position)}
+            onValueChange={(value) => setAgainstPosition(value as Position)}
           >
-            {PositionsArray.filter((position) => position !== forPosition).map(
-              (position) => (
-                <option key={position} value={position}>
+            <SelectTrigger id="againstPosition">
+              <SelectValue placeholder="Select an against position" />
+            </SelectTrigger>
+            <SelectContent>
+              {PositionsArray.filter(
+                (position) => position !== forPosition
+              ).map((position) => (
+                <SelectItem key={position} value={position}>
                   {position}
-                </option>
-              )
-            )}
-          </select>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </>
       )}
       <PokerHandChart

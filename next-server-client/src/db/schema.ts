@@ -6,6 +6,7 @@ import {
   index,
   boolean,
   pgEnum,
+  json,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -398,6 +399,15 @@ export const Users = pgTable(`${projectPrefix}users`, {
   name: text("name").notNull(),
   email: text("email").notNull(),
   image: text("image"),
+});
+
+export const HandReviews = pgTable(`${projectPrefix}hand_reviews`, {
+  id: text("id").primaryKey(), // UUID as text
+  handId: text("hand_id")
+    .notNull()
+    .references(() => Hands.id, { onDelete: "cascade" }),
+  content: json("content").notNull(),
+  createdAt: text("created_at").notNull(),
 });
 
 // Relations ////////////////////////////////////////////////////////////////

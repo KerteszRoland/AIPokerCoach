@@ -1,3 +1,6 @@
+import { Card as CardShad } from "@/components/ui/card";
+import { Separator } from "../ui/separator";
+
 export default function Card({
   className,
   children,
@@ -10,15 +13,11 @@ export default function Card({
   scrollableContentMaxHeight?: number;
 }) {
   return (
-    <div
-      className={`border-2 border-white rounded-2xl ${
-        Header ? "py-2" : "p-4"
-      } ${className}`}
-    >
+    <CardShad className={`${Header ? "py-2" : "p-4"} ${className}`}>
       {Header && (
         <div className="flex flex-col">
           <div className="px-4">{Header}</div>
-          <hr className="mt-2 mb-4" />
+          <Separator className="border-1 mt-2 mb-4" />
           <div
             className={`mx-4 ${
               scrollableContentMaxHeight
@@ -31,6 +30,6 @@ export default function Card({
         </div>
       )}
       {!Header && children}
-    </div>
+    </CardShad>
   );
 }

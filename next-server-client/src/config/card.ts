@@ -76,7 +76,7 @@ export function getCardSuitColor(card: Card): string {
   const suit = getCardSuit(card);
   switch (suit) {
     case "s":
-      return "#6a7282";
+      return "primary";
     case "c":
       return "#00c950";
     case "h":

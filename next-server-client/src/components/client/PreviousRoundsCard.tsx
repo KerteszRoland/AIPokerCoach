@@ -131,7 +131,7 @@ function PreviousRoundPosition({ position }: { position: Position | null }) {
     return null;
   }
   return (
-    <div className="w-min border border-gray-200 rounded-md p-2 min-w-[80px] text-center bg-black">
+    <div className="w-min border border-gray-200 rounded-md p-2 min-w-[80px] text-center bg-foreground text-background">
       {`${position}`}
     </div>
   );

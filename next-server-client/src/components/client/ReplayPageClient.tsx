@@ -2,11 +2,23 @@
 import { CommunityCardAction } from "@/app/review/[id]/page";
 import Card from "@/components/server/Card";
 import MiniPokerCard from "@/components/server/MiniPokerCard";
-import { getCardDisplay, getCardSuitColor } from "@/config/card";
 import { ActionFull, HandFull } from "@/server/serverRequests/hand";
 import { useEffect, useRef, useState } from "react";
 import CoachReviewCard from "../server/CoachReviewCard";
+import { HandReview } from "@/utils/validations/handReviewValidationSchema";
 import PokerTable from "../server/PokerTable";
+import Button from "./Button";
+import {
+  FaArrowLeft,
+  FaArrowRight,
+  FaChevronLeft,
+  FaChevronRight,
+  FaPause,
+} from "react-icons/fa";
+import { ScrollArea } from "../ui/scroll-area";
+import { moneyToBB } from "@/config/action";
+import { ReplayAction } from "@/server/getReplayActionsFromHand";
+import { useCreateHandReview, useGetHandReview } from "@/hooks/useHandReview";
 
 // Map action names to display colors
 const getActionColor = (actionName: string) => {
@@ -42,16 +54,47 @@ const getActionColor = (actionName: string) => {
 export default function ReplayPageClient({
   hand,
   replayActions,
+  handReview: initialHandReview,
 }: {
   hand: HandFull;
-  replayActions: {
-    action: ActionFull | null;
-    communityCard: CommunityCardAction | null;
-  }[];
+  replayActions: ReplayAction[];
+  handReview: HandReview | null;
 }) {
+  const { mutate: createHandReview, isPending: isReviewCreateLoading } =
+    useCreateHandReview();
+  const {
+    data: handReview,
+    isLoading: isReviewLoading,
+    refetch: refetchHandReview,
+    error: reviewError,
+  } = useGetHandReview({
+    id: hand.id,
+    initialData: initialHandReview ?? undefined,
+  });
+
   const actionsContainerRef = useRef<HTMLDivElement>(null);
   const [currentActionIndex, setCurrentActionIndex] = useState(0);
   const hero = hand.players.find((player) => player.isHero)!;
+
+  const handReviewForCurrentAction = handReview?.content?.action_reviews.find(
+    (x) => x.action_number === currentActionIndex + 1
+  );
+
+  const getCoachDescription = () => {
+    if (currentActionIndex === 0) {
+      return handReview?.content.overall_summary ?? "I analyzed the hand";
+    }
+    if (currentActionIndex === replayActions.length - 1) {
+      return (
+        "Key takeaways:\n" +
+        handReview?.content.key_takeaways.map((x) => "\t• " + x).join("\n")
+      );
+    }
+    return handReviewForCurrentAction?.analysis || "";
+  };
+
+  const coachDescription = getCoachDescription();
+  const coachRating = handReviewForCurrentAction?.rating ?? undefined;
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -97,10 +140,30 @@ export default function ReplayPageClient({
     setCurrentActionIndex(replayActions.length - 1);
   };
 
+  const handleCreateHandReview = () => {
+    createHandReview(
+      { id: hand.id },
+      {
+        onSuccess: () => {
+          refetchHandReview();
+          setCurrentActionIndex(0);
+        },
+        onError: () => {
+          console.error("Failed to create hand review");
+        },
+      }
+    );
+  };
+
   return (
     <div className="flex flex-row justify-between gap-4 w-full px-8">
-      <div className="flex flex-col items-center gap-4 max-w-[400px]">
-        <CoachReviewCard />
+      <div className="flex flex-col items-center gap-4 w-[400px]">
+        <CoachReviewCard
+          coachDescription={handReview ? coachDescription : null}
+          coachRating={coachRating}
+          onReview={handleCreateHandReview}
+          isReviewLoading={isReviewLoading || isReviewCreateLoading}
+        />
         <Card
           className="w-full"
           Header={
@@ -120,65 +183,68 @@ export default function ReplayPageClient({
             </div>
           }
         >
-          <div
-            className="flex flex-col gap-2 max-h-40 min-h-40 overflow-y-auto px-2"
-            ref={actionsContainerRef}
-          >
-            {replayActions
-              .slice(0, currentActionIndex + 1)
-              .map((actionOrCommunityCard, index) => {
-                return (
-                  <ReplayActionElement
-                    key={`action-${index}`}
-                    action={actionOrCommunityCard.action}
-                    communityCard={actionOrCommunityCard.communityCard}
-                    index={index}
-                    currentActionIndex={currentActionIndex}
-                    onClick={() => {
-                      setCurrentActionIndex(index);
-                    }}
-                  />
-                );
-              })}
-          </div>
+          <ScrollArea ref={actionsContainerRef}>
+            <div className="flex flex-col gap-2 max-h-40 min-h-40 px-2">
+              {replayActions
+                .slice(0, currentActionIndex + 1)
+                .map((actionOrCommunityCard, index) => {
+                  return (
+                    <ReplayActionElement
+                      key={`action-${index}`}
+                      action={actionOrCommunityCard.action}
+                      communityCard={actionOrCommunityCard.communityCard}
+                      index={index}
+                      currentActionIndex={currentActionIndex}
+                      smallBlind={hand.smallBlind}
+                      onClick={() => {
+                        setCurrentActionIndex(index);
+                      }}
+                    />
+                  );
+                })}
+            </div>
+          </ScrollArea>
 
           {/* Navigation controls */}
           <div className="flex justify-center gap-2 pt-4">
-            <button
+            <Button
               onClick={goToStart}
               disabled={currentActionIndex === 0}
               className="px-4 py-2 rounded bg-gray-200 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ≪
-            </button>
-            <button
+              <FaArrowLeft />
+            </Button>
+            <Button
               onClick={goToPrevious}
               disabled={currentActionIndex === 0}
               className="px-4 py-2 rounded bg-gray-200 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ←
-            </button>
-            <button className="px-4 py-2 rounded bg-gray-200 text-gray-800">
-              ⏸
-            </button>
-            <button
+              <FaChevronLeft />
+            </Button>
+            <Button className="px-4 py-2 rounded bg-gray-200 text-gray-800">
+              <FaPause />
+            </Button>
+            <Button
               onClick={goToNext}
               disabled={currentActionIndex === replayActions.length - 1}
               className="px-4 py-2 rounded bg-gray-200 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              →
-            </button>
-            <button
+              <FaChevronRight />
+            </Button>
+            <Button
               onClick={goToEnd}
               disabled={currentActionIndex === replayActions.length - 1}
               className="px-4 py-2 rounded bg-gray-200 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ≫
-            </button>
+              <FaArrowRight />
+            </Button>
           </div>
         </Card>
       </div>
-      <PokerTable />
+      <PokerTable
+        handFull={hand}
+        replayActions={replayActions.slice(0, currentActionIndex + 1)}
+      />
     </div>
   );
 }
@@ -189,12 +255,14 @@ function ReplayActionElement({
   index,
   currentActionIndex,
   onClick,
+  smallBlind,
 }: {
   action: ActionFull | null;
   communityCard: CommunityCardAction | null;
   index: number;
   currentActionIndex: number;
   onClick?: () => void;
+  smallBlind: number;
 }) {
   const elementRef = useRef<HTMLDivElement>(null);
   const isCurrentAction = index === currentActionIndex;
@@ -258,7 +326,7 @@ function ReplayActionElement({
           {isCurrentAction && (
             <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
           )}
-          <ActionContent action={action} />
+          <ActionContent action={action} smallBlind={smallBlind} />
           {isCurrentAction && false && (
             <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-green-500 text-white px-3 py-1 rounded text-sm font-bold">
               ok
@@ -270,62 +338,13 @@ function ReplayActionElement({
   );
 }
 
-function getActionAsText(action: ActionFull) {
-  const isHeroAction = action.player.isHero;
-  let text: string = action.name;
-
-  // Convert action names to more readable format
-  switch (action.name) {
-    case "PostSmallBlind":
-      text = "Posts SB";
-      break;
-    case "PostBigBlind":
-      text = "Posts BB";
-      break;
-    case "RaiseAndAllIn":
-      text = "All-in";
-      break;
-    case "CallAndAllIn":
-      text = "All-in";
-      break;
-    case "BetAndAllIn":
-      text = "All-in";
-      break;
-    case "Muck":
-      text = "Mucks";
-      break;
-    case "Fold":
-      text = "Folds";
-      break;
-    case "Call":
-      text = "Calls";
-      break;
-    case "Raise":
-      text = "Raises";
-      break;
-    case "Bet":
-      text = "Bets";
-      break;
-    case "Shows":
-      text = `Shows ${action.card1} ${action.card2} (${action.text})`;
-      break;
-    case "Check":
-    default:
-      text = action.name;
-      break;
-  }
-
-  // Add amount information
-  if (action.amount && action.amount2) {
-    text = `${text} to $${action.amount2}`;
-  } else if (action.amount) {
-    text = `${text} $${action.amount}`;
-  }
-
-  return text;
-}
-
-function ActionContent({ action }: { action: ActionFull }) {
+function ActionContent({
+  action,
+  smallBlind,
+}: {
+  action: ActionFull;
+  smallBlind: number;
+}) {
   const isHeroAction = action.player.isHero;
   let text: string = action.name;
 
@@ -366,9 +385,9 @@ function ActionContent({ action }: { action: ActionFull }) {
 
   // Add amount information
   if (action.amount && action.amount2) {
-    text = `${text} to $${action.amount2}`;
+    text = `${text} to ${moneyToBB(action.amount2, smallBlind)}BB`;
   } else if (action.amount) {
-    text = `${text} $${action.amount}`;
+    text = `${text} ${moneyToBB(action.amount, smallBlind)}BB`;
   }
 
   return (
@@ -377,6 +396,7 @@ function ActionContent({ action }: { action: ActionFull }) {
         <span className="font-bold">
           {isHeroAction ? "You" : action.player.name}
         </span>
+        <span className="text-xs">({action.player.position})</span>
         <span>{text}</span>
         {action.name === "Shows" && (
           <div className="flex flex-row items-center justify-center gap-1">
@@ -386,7 +406,7 @@ function ActionContent({ action }: { action: ActionFull }) {
         )}
       </div>
       {action.text && (
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-800">
           <span>({action.text})</span>
         </div>
       )}

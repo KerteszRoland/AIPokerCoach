@@ -1,10 +1,11 @@
-import { ActionNames, Streets } from "@/config/action";
 import { Card as CardType } from "@/config/card";
 import getSessionOrRedirect from "@/server/getSessionOrRedirect";
-import { ActionFull, getHandById } from "@/server/serverRequests/hand";
-import { PageNotFoundError } from "next/dist/shared/lib/utils";
+import { getHandById } from "@/server/serverRequests/hand";
 import { notFound } from "next/navigation";
 import ReplayPageClient from "@/components/client/ReplayPageClient";
+import { getReplayActionsFromHand } from "@/server/getReplayActionsFromHand";
+import { getHandReview } from "@/server/serverRequests/handReview";
+import { HandReview } from "@/utils/validations/handReviewValidationSchema";
 
 type CommunityCardFlop = {
   flop1: CardType;
@@ -39,57 +40,16 @@ export default async function ReviewIdPage({
       return notFound();
     }
 
-    const replayActions: {
-      action: ActionFull | null;
-      communityCard: CommunityCardAction | null;
-    }[] = [];
+    const replayActions = getReplayActionsFromHand(hand);
+    const handReview: HandReview | null = await getHandReview(id);
 
-    hand.actions
-      .filter(
-        (action) =>
-          ![
-            ActionNames.Connected,
-            ActionNames.Disconnected,
-            ActionNames.SitsOut,
-            ActionNames.Join,
-            ActionNames.Leave,
-          ].includes(action.name)
-      )
-      .forEach((action) => {
-        if (action.sequence === 0) {
-          switch (action.street) {
-            case Streets.Flop:
-              replayActions.push({
-                action: null,
-                communityCard: {
-                  flop1: hand.communityCards!.flop1!,
-                  flop2: hand.communityCards!.flop2!,
-                  flop3: hand.communityCards!.flop3!,
-                },
-              });
-              break;
-            case Streets.Turn:
-              replayActions.push({
-                action: null,
-                communityCard: {
-                  turn: hand.communityCards!.turn!,
-                },
-              });
-              break;
-            case Streets.River:
-              replayActions.push({
-                action: null,
-                communityCard: {
-                  river: hand.communityCards!.river!,
-                },
-              });
-              break;
-          }
-        }
-        replayActions.push({ action: action, communityCard: null });
-      });
-
-    return <ReplayPageClient hand={hand} replayActions={replayActions} />;
+    return (
+      <ReplayPageClient
+        hand={hand}
+        replayActions={replayActions}
+        handReview={handReview}
+      />
+    );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.message === "NEXT_REDIRECT") {

@@ -8,6 +8,7 @@ import {
   ChartHand,
   isValidChartHand,
 } from "@/config/chart";
+import Button from "@/components/client/Button";
 
 function getHandTable(): ChartHand[][] {
   function indexToCard(index: number) {
@@ -154,17 +155,18 @@ export default function PokerHandChart({
       {showSelectActionBtns && (
         <div className="flex justify-center gap-2 pb-5">
           {ChartActionsArray.map((action) => (
-            <button
-              className={`text-center border rounded-md p-2 cursor-pointer select-none ${
+            <Button
+              variant="secondary"
+              className={`text-foreground hover:bg-foreground hover:text-background ${
                 selectedAction === action
-                  ? "bg-white-300 border-black-500 border-2"
-                  : `${getActionColor(action)} border-black-300`
+                  ? "bg-foreground text-background"
+                  : `${getActionColor(action)} `
               }`}
               key={action}
               onClick={() => setSelectedAction(action)}
             >
               {action[0].toUpperCase() + action.slice(1).toLowerCase()}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -184,7 +186,7 @@ export default function PokerHandChart({
                       toggleActionToHand(data, selectedAction);
                     }
                   }}
-                  className={`w-10 h-10 text-center border rounded-md border-black-300 ${
+                  className={`w-10 h-10 text-center border-2 rounded-md border-primary ${
                     editable ? "cursor-pointer" : ""
                   } ${
                     value.some((item) => item.hand === data)
