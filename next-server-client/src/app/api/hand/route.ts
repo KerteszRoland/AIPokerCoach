@@ -4,6 +4,7 @@ import { Hands } from "@/db/schema";
 import { getHands } from "@/server/serverRequests/hand";
 import { eq } from "drizzle-orm";
 import { getUserIdFromSession } from "@/server/getUserIdFromSession";
+import { notifyNewHand } from "@/server/sse";
 
 export async function POST(request: Request) {
   try {
@@ -19,6 +20,12 @@ export async function POST(request: Request) {
     const google_access_token = body.google_access_token;
 
     await handJsonToDb(body);
+
+    try {
+      notifyNewHand();
+    } catch (error) {
+      console.error(error);
+    }
 
     return new Response(null, { status: 204 });
   } catch (reason) {
