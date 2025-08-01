@@ -17,6 +17,13 @@ fn main() {
     copy_dir_recursive(src_assets, &dest_assets).unwrap();
     
     println!("cargo:rerun-if-changed=src/assets");
+
+    #[cfg(windows)]
+    {
+        // Set the Windows subsystem to "windows" to hide the console
+        println!("cargo:rustc-link-arg=/SUBSYSTEM:WINDOWS");
+        println!("cargo:rustc-link-arg=/ENTRY:mainCRTStartup");
+    }
 }
 
 fn copy_dir_recursive(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result<()> {
