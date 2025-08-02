@@ -1,6 +1,6 @@
 [package]
-name = "AIPokerCoach"
-version = "0.1.0"
+name = "RustHandScraper"
+version = "1.0.8"
 edition = "2024"
 authors = ["Kertesz Roland"]
 
@@ -28,3 +28,6 @@ winreg = "0.55.0"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser"] }
+
+[build-dependencies]
+cargo-wix = "0.3.0"

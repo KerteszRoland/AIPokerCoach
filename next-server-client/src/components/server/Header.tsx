@@ -21,6 +21,9 @@ export default async function Header() {
           <Button href="/">Home</Button>
           <Button href="/review">Review</Button>
           <Button href="/pokerHandChart">Range Charts</Button>
+          <Button className="bg-green-500" href="/download">
+            Download
+          </Button>
         </div>
         <div className="flex flex-row justify-center items-center gap-4">
           <SignedInServer>
