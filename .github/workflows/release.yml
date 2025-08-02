@@ -43,10 +43,14 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Build project
-        run: cargo build --verbose # Builds for the Windows platform
+        run: |
+          cd RustHandScraper
+          cargo build --verbose # Builds for the Windows platform
 
       - name: Run tests
-        run: cargo test --verbose # Runs tests for the Windows platform
+        run: |
+          cd RustHandScraper
+          cargo test --verbose # Runs tests for the Windows platform
 
   # -----------------------------------------------------------------
   # JOB 2: CD - Build MSI and Release (Windows)
@@ -83,6 +87,7 @@ jobs:
 
       - name: Install cargo-wix
         run: cargo install cargo-wix --force
+
       - name: Install WiX Toolset
         run: |
           Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314.exe" -OutFile "wix314.exe"
@@ -99,6 +104,7 @@ jobs:
       - name: Build MSI Installer
         # This will build the Rust executable for Windows and then package it into an MSI
         run: |
+          cd RustHandScraper
           cargo build --release
           cargo wix
 
@@ -113,7 +119,7 @@ jobs:
       - name: List generated files
         run: |
           echo "Checking for generated MSI files:"
-          Get-ChildItem -Path "target" -Recurse -Filter "*.msi" | ForEach-Object { Write-Host $_.FullName }
+          Get-ChildItem -Path "RustHandScraper/target" -Recurse -Filter "*.msi" | ForEach-Object { Write-Host $_.FullName }
 
       - name: Upload MSI to Release
         uses: softprops/action-gh-release@v2
@@ -124,8 +130,8 @@ jobs:
           name: Release ${{ steps.release_info.outputs.app_name }} ${{ steps.release_info.outputs.tag_name }}
           generate_release_notes: true # Generates release notes from Git history
           files: |
-            target/wix/AIPokerCoach-${{ steps.release_info.outputs.tag_name }}-x86_64.msi
-            target/wix/AIPokerCoach-${{ steps.release_info.outputs.tag_name }}.msi
+            RustHandScraper/target/wix/AIPokerCoach-${{ steps.release_info.outputs.tag_name }}-x86_64.msi
+            RustHandScraper/target/wix/AIPokerCoach-${{ steps.release_info.outputs.tag_name }}.msi
             # Include both possible naming patterns
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
