@@ -1,3 +1,6 @@
+![Rust CI/CD](https://github.com/KerteszRoland/AIPokerCoach/actions/workflows/release.yml/badge.svg)
+
+<br>
 <div align="center">
   <img src="./RustHandScraper/src/assets/icon_running.png" width="128" height="128" alt="AI Poker Coach">
   <h1>AI Poker Coach</h1>

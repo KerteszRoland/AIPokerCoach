@@ -107,7 +107,9 @@ jobs:
       - name: List generated files
         run: |
           echo "Checking for generated MSI files:"
-          Get-ChildItem -Path "RustHandScraper/target" -Recurse -Filter "*.msi" | ForEach-Object { Write-Host $_.FullName }
+          $msiFiles = Get-ChildItem -Path "RustHandScraper/target" -Recurse -Filter "*.msi"
+          $msiFiles | ForEach-Object { Write-Host $_.FullName }
+          $filesString = ($msiFiles | ForEach-Object { $_.FullName }) -join "`n"
 
       - name: Upload MSI to Release
         uses: softprops/action-gh-release@v2
@@ -117,9 +119,6 @@ jobs:
           tag_name: ${{ steps.release_info.outputs.tag_name }}
           name: Release ${{ steps.release_info.outputs.app_name }} ${{ steps.release_info.outputs.tag_name }}
           generate_release_notes: true # Generates release notes from Git history
-          files: |
-            RustHandScraper/target/wix/AIPokerCoach-${{ steps.release_info.outputs.tag_name }}-x86_64.msi
-            RustHandScraper/target/wix/AIPokerCoach-${{ steps.release_info.outputs.tag_name }}.msi
-            # Include both possible naming patterns
+          files: ${{ env.filesString }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
