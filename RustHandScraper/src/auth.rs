@@ -66,7 +66,7 @@ pub async fn start_login_flow() -> Result<(), Box<dyn Error>> {
     // Clear any existing token before starting new login flow
     clear_access_token().ok(); // Ignore errors if no token exists
     
-    let nextjs_exchange_url = format!("{}/api/rust-client", BACKEND_URL);
+    let nextjs_exchange_url = format!("{}/rust-client/signin", BACKEND_URL);
     
     println!("Opening browser for authentication...");
     webbrowser::open(&nextjs_exchange_url)?;
