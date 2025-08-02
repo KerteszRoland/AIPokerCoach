@@ -101,7 +101,7 @@ jobs:
         run: |
           $TAG_NAME = "${{ github.ref }}" -replace "refs/tags/", ""
           echo "tag_name=$TAG_NAME" >> "$env:GITHUB_OUTPUT"
-          $APP_NAME = "AIPokerCoach"
+          $APP_NAME = "RustHandScraper"
           echo "app_name=$APP_NAME" >> "$env:GITHUB_OUTPUT"
 
       - name: List generated files

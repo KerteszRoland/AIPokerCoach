@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "AIPokerCoach"
+name = "RustHandScraper"
 version = "0.1.0"
 dependencies = [
  "cargo-wix",
