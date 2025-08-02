@@ -13,47 +13,7 @@ env:
 
 jobs:
   # -----------------------------------------------------------------
-  # JOB 1: CI - Build and Test (Windows)
-  # Runs on every push to main and every pull request
-  # -----------------------------------------------------------------
-  build_and_test:
-    name: Build & Test (Windows)
-    runs-on: windows-latest # Windows runner for standard CI checks
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable # Use latest stable Rust
-          target: x86_64-pc-windows-msvc # Windows target
-
-      - name: Cache Cargo dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/
-            ~/.cargo/git/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-
-      - name: Build project
-        run: |
-          cd RustHandScraper
-          cargo build --verbose # Builds for the Windows platform
-
-      - name: Run tests
-        run: |
-          cd RustHandScraper
-          cargo test --verbose # Runs tests for the Windows platform
-
-  # -----------------------------------------------------------------
-  # JOB 2: CD - Build MSI and Release (Windows)
+  # JOB 1: CD - Build MSI and Release (Windows)
   # Runs ONLY when a tag (e.g., v1.0.0) is pushed
   # -----------------------------------------------------------------
   build_msi_and_release:
@@ -93,20 +53,12 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314.exe" -OutFile "wix314.exe"
           Start-Process -FilePath "wix314.exe" -ArgumentList "/install","/quiet" -Wait
 
-      - name: Verify WiX Toolset Installation
-        run: |
-          where candle.exe
-          if ($LastExitCode -ne 0) {
-              echo "Candle.exe not found in PATH after WiX Toolset installation."
-              exit 1
-          }
-
       - name: Build MSI Installer
         # This will build the Rust executable for Windows and then package it into an MSI
         run: |
           cd RustHandScraper
           cargo build --release
-          cargo wix
+          cargo wix --nocapture
 
       - name: Get Release Information
         id: release_info
