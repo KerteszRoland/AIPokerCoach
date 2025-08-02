@@ -50,7 +50,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            RustHandScraper/target/release/AIPokerCoach.exe
+            RustHandScraper/target/release/RustHandScraper.exe
           key: ${{ runner.os }}-binary-${{ hashFiles('RustHandScraper/src/**/*.rs') }}-${{ hashFiles('RustHandScraper/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-binary-
@@ -105,11 +105,13 @@ jobs:
           echo "app_name=$APP_NAME" >> "$env:GITHUB_OUTPUT"
 
       - name: List generated files
+        id: list_files
         run: |
           echo "Checking for generated MSI files:"
           $msiFiles = Get-ChildItem -Path "RustHandScraper/target" -Recurse -Filter "*.msi"
           $msiFiles | ForEach-Object { Write-Host $_.FullName }
           $filesString = ($msiFiles | ForEach-Object { $_.FullName }) -join "`n"
+          echo "filesString=$filesString" >> "$env:GITHUB_OUTPUT"
 
       - name: Upload MSI to Release
         uses: softprops/action-gh-release@v2
@@ -119,6 +121,6 @@ jobs:
           tag_name: ${{ steps.release_info.outputs.tag_name }}
           name: Release ${{ steps.release_info.outputs.app_name }} ${{ steps.release_info.outputs.tag_name }}
           generate_release_notes: true # Generates release notes from Git history
-          files: ${{ env.filesString }}
+          files: ${{ steps.list_files.outputs.filesString }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
