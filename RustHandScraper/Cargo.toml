@@ -28,3 +28,6 @@ winreg = "0.55.0"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser"] }
+
+[build-dependencies]
+cargo-wix = "0.3.0"
