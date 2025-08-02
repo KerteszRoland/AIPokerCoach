@@ -20,6 +20,14 @@ import {
   ChartTypes,
   ChartTypesArray,
 } from "@/config/chart";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import DeleteModal from "../server/DeleteModal";
 
 export default function RangeChartUpdateForm({
   chart,
@@ -82,27 +90,27 @@ export default function RangeChartUpdateForm({
     <div className="flex flex-col items-center gap-4">
       <h1 className="text-2xl font-bold">{"Update chart #" + chart.id}</h1>
       <label htmlFor="position">Position</label>
-      <select
-        id="position"
+      <Select
         value={forPosition}
-        onChange={(e) => setForPosition(e.target.value as Position)}
+        onValueChange={(value) => setForPosition(value as Position)}
       >
-        {PositionsArray.map((position) => (
-          <option key={position} value={position}>
-            {position}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger id="position">
+          <SelectValue placeholder="Select position" />
+        </SelectTrigger>
+        <SelectContent>
+          {PositionsArray.map((position) => (
+            <SelectItem key={position} value={position}>
+              {position}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <label htmlFor="type">Type</label>
-      <select
-        id="type"
+      <Select
         value={type}
-        onChange={(e) => {
-          setType(e.target.value as ChartType);
-          if (
-            (e.target.value as ChartType) !== ChartTypes.frfi &&
-            (e.target.value as ChartType) !== ChartTypes.bet3
-          ) {
+        onValueChange={(value) => {
+          setType(value as ChartType);
+          if (value !== ChartTypes.frfi && value !== ChartTypes.bet3) {
             setAgainstPosition(null);
           } else {
             if (forPosition === Positions.BTN) {
@@ -113,28 +121,37 @@ export default function RangeChartUpdateForm({
           }
         }}
       >
-        {ChartTypesArray.map((type) => (
-          <option key={type} value={type}>
-            {type.toUpperCase()}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger id="type">
+          <SelectValue placeholder="Select type" />
+        </SelectTrigger>
+        <SelectContent>
+          {ChartTypesArray.map((type) => (
+            <SelectItem key={type} value={type}>
+              {type.toUpperCase()}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       {(type === ChartTypes.frfi || type === ChartTypes.bet3) && (
         <>
           <label htmlFor="againstPosition">Against Position</label>
-          <select
-            id="againstPosition"
+          <Select
             value={againstPosition || ""}
-            onChange={(e) => setAgainstPosition(e.target.value as Position)}
+            onValueChange={(value) => setAgainstPosition(value as Position)}
           >
-            {PositionsArray.filter((position) => position !== forPosition).map(
-              (position) => (
-                <option key={position} value={position}>
+            <SelectTrigger id="againstPosition">
+              <SelectValue placeholder="Select against position" />
+            </SelectTrigger>
+            <SelectContent>
+              {PositionsArray.filter(
+                (position) => position !== forPosition
+              ).map((position) => (
+                <SelectItem key={position} value={position}>
                   {position}
-                </option>
-              )
-            )}
-          </select>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </>
       )}
       <PokerHandChart
@@ -145,18 +162,24 @@ export default function RangeChartUpdateForm({
       <div className="flex flex-col items-center gap-4">
         <Button
           onClick={handleUpdate}
-          className="bg-green-500"
+          className="bg-green-500 text-foreground"
           disabled={isUpdating}
         >
           {isUpdating ? "Updating..." : "Update"}
         </Button>
-        <Button
-          onClick={handleDelete}
-          className="bg-red-500"
-          disabled={isDeleting}
-        >
-          {isDeleting ? "Deleting..." : "Delete"}
-        </Button>
+        <DeleteModal
+          title="Delete chart"
+          description="Are you sure you want to delete this chart?"
+          onConfirm={handleDelete}
+          trigger={
+            <Button
+              className="bg-red-500 text-foreground"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          }
+        />
       </div>
     </div>
   );

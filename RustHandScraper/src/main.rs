@@ -6,12 +6,17 @@ use tray_icon::{menu::{CheckMenuItem, IconMenuItem, Menu, MenuEvent, MenuItem}, 
 use gtk;
 use tokio::time::{sleep, Duration};
 use dotenv::dotenv;
+use native_dialog::{DialogBuilder, MessageLevel};
 mod auth;
+mod config;
 use auth::{start_login_flow, get_access_token, store_access_token, get_google_user_info};
+use config::{ConfigManager, AppConfig};
 use std::env;
 use winreg::{RegKey, enums::HKEY_CLASSES_ROOT};
 
 use crate::auth::{clear_access_token, GoogleUserInfo};
+
+const BACKEND_URL: &str = "http://localhost:3000";
 
 #[derive(Debug, Clone)]
 enum Position {
@@ -894,9 +899,8 @@ fn scan_for_todays_most_recent_hand(path_to_pokerstars_handhistory: &str) -> Opt
 
 async fn send_hand_to_server(hand: Hand, user_google_id: String, google_access_token: String) {
     let client = reqwest::Client::new();
-    let backend_url = std::env::var("BACKEND_URL").expect("BACKEND_URL not set");
-    println!("Sending hand to server: {}/api/hand", backend_url);
-    let url = format!("{}/api/hand", backend_url);
+    println!("Sending hand to server: {}/api/hand", BACKEND_URL);
+    let url = format!("{}/api/hand", BACKEND_URL);
     let json = hand.to_json(user_google_id, google_access_token);
     let res = client
         .post(url)
@@ -914,43 +918,15 @@ async fn send_hand_to_server(hand: Hand, user_google_id: String, google_access_t
     }
 }
 
-fn is_uri_scheme_registered() -> Result<bool, Box<dyn std::error::Error>> {
-    let hkcr = RegKey::predef(HKEY_CLASSES_ROOT);
-    let key = hkcr.open_subkey("ai-poker-coach")?;
-    Ok(key.get_value::<String, _>("").is_ok())
-}
-
-fn register_uri_scheme() -> Result<(), Box<dyn std::error::Error>> {
-    #[cfg(target_os = "windows")]
-    fn ask_for_admin() -> Result<(), Box<dyn std::error::Error>> {
-        use std::process::Command;
-        let current_exe = std::env::current_exe()?;
-        let mut cmd = Command::new("powershell");
-        cmd.arg("-Command")
-            .arg(format!(
-                "Start-Process -FilePath '{}' -Verb runAs",
-                current_exe.to_str().unwrap()
-            ));
-        let status = cmd.status()?;
-        if !status.success() {
-            return Err("Failed to elevate to admin privileges".into());
-        }
-        Ok(())
-    }
-    #[cfg(target_os = "windows")]
-    ask_for_admin()?;
-
-    let hkcr = RegKey::predef(HKEY_CLASSES_ROOT);
-    let (key, _) = hkcr.create_subkey("ai-poker-coach")?;
-    key.set_value("", &"URL:ai-poker-coach Protocol")?;
-    key.set_value("URL Protocol", &"")?;
-
-    let (shell, _) = key.create_subkey("shell")?;
-    let (open, _) = shell.create_subkey("open")?;
-    let (command, _) = open.create_subkey("command")?;
-    command.set_value("", &format!("\"{}\" \"%1\"", std::env::current_exe()?.to_str().unwrap()))?;
-    command.set_value("NoWindow", &"true")?; // Ensure the shell is opened without showing a window
-    Ok(())
+fn show_alert(message: &str) {
+    println!("Showing alert: {}", message);
+    DialogBuilder::message()
+        .set_level(MessageLevel::Info)
+        .set_title("AI Poker Coach")
+        .set_text(message)
+        .confirm()
+        .show()
+        .unwrap();
 }
 
 #[derive(Debug)]
@@ -966,6 +942,7 @@ enum AppCommand {
     LogIn,
     LogOut,
     SyncHands,
+    ChangeFolderPath,
     Exit,
 }
 
@@ -977,14 +954,17 @@ fn create_tray_thread(user_info: Option<GoogleUserInfo>, user_icon: Option<tray_
         #[cfg(target_os = "linux")]
         gtk::init().expect("Failed to initialize GTK.");
 
-        let icon_running = load_icon(std::path::Path::new("./src/assets/icon_running.png"));
-        let icon_paused = load_icon(std::path::Path::new("./src/assets/icon_paused.png"));
-        let icon_error = load_icon(std::path::Path::new("./src/assets/icon_error.png"));
+        let current_dir = std::env::current_exe().unwrap().parent().unwrap().to_path_buf();
+        println!("Current directory: {}", current_dir.display());
+        let icon_running = load_icon(std::path::Path::new(&format!("{}/assets/icon_running.png", current_dir.display())));
+        let icon_paused = load_icon(std::path::Path::new(&format!("{}/assets/icon_paused.png", current_dir.display())));
+        let icon_error = load_icon(std::path::Path::new(&format!("{}/assets/icon_error.png", current_dir.display())));
 
         let logged_in_name = IconMenuItem::new("Not logged in", false, None, None);
         let log_in_out = MenuItem::new("Log in/out", true, None);
         let paused = MenuItem::new("Pause", true, None);
         let sync_hands = MenuItem::new("Sync hands", true, None);
+        let change_folder_path = MenuItem::new("Change folder path", true, None);
         let exit_item = MenuItem::new("Exit", true, None);
 
         let mut logged_in = false;
@@ -1007,6 +987,7 @@ fn create_tray_thread(user_info: Option<GoogleUserInfo>, user_icon: Option<tray_
         let _ = inner_menu.append(&log_in_out);
         let _ = inner_menu.append(&paused);
         let _ = inner_menu.append(&sync_hands);
+        let _ = inner_menu.append(&change_folder_path);
         let _ = inner_menu.append(&exit_item);
 
         let tray = TrayIconBuilder::new()
@@ -1065,6 +1046,9 @@ fn create_tray_thread(user_info: Option<GoogleUserInfo>, user_icon: Option<tray_
                 } else if event.id() == sync_hands.id() {
                     println!("Sync hands requested");
                     app_tx.send(AppCommand::SyncHands).ok();
+                } else if event.id() == change_folder_path.id() {
+                    println!("Change folder path requested");
+                    app_tx.send(AppCommand::ChangeFolderPath).ok();
                 } else if event.id() == exit_item.id() {
                     println!("Exit requested");
                     app_tx.send(AppCommand::Exit).ok();
@@ -1133,10 +1117,6 @@ fn create_tray_thread(user_info: Option<GoogleUserInfo>, user_icon: Option<tray_
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load environment variables from .env file
     dotenv().ok();
-   
-    if !is_uri_scheme_registered().expect("Failed to check if URI scheme is registered") {
-        register_uri_scheme().expect("Failed to register URI scheme");
-    }
 
     let args: Vec<String> = env::args().collect();
     println!("Args: {:?}", args);
@@ -1150,6 +1130,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         store_access_token(&args[1].split("token=").last().unwrap()).expect("Failed to store access token");
         return Ok(());
     }
+
+    // Initialize configuration manager
+    let mut config_manager = ConfigManager::new()?;
+    println!("Config file location: {:?}", config_manager.get_config_file_path());
 
     let mut user_icon: Option<tray_icon::menu::Icon> = None;
     let user_info: Option<GoogleUserInfo> = match rt.block_on(get_google_user_info()) {
@@ -1200,7 +1184,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             return Ok(());
                         }
                         
-                        let path_to_handhistory = std::env::var("POKERSTARS_HANDHISTORY_PATH").expect("POKERSTARS_HANDHISTORY_PATH not set");
+                        // Get path from configuration instead of environment variable
+                        let path_to_handhistory = match config_manager.get_pokerstars_path() {
+                            Ok(Some(path)) => path,
+                            Ok(None) => {
+                                show_alert("No PokerStars hand history path configured. Please use 'Change folder path' option first.");
+                                continue;
+                            }
+                            Err(e) => {
+                                println!("Failed to get path from config: {}", e);
+                                continue;
+                            }
+                        };
                         
                         let files = get_hand_files_from_folder(&path_to_handhistory);
                         let hands = files.iter().map(|file| get_hands_from_file(file.as_ref().unwrap().path().to_str().unwrap())).flatten().collect::<Vec<Hand>>();
@@ -1209,6 +1204,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             rt.block_on(send_hand_to_server(hand.clone(),  user_info.id.clone(), google_access_token.clone().unwrap()));
                         }
                         
+                    }
+                }
+                AppCommand::ChangeFolderPath => {
+                    println!("Main: Change folder path requested");
+                    let path = DialogBuilder::file()
+                        .set_title("Select PokerStars Hand History Folder")
+                        .open_single_dir()
+                        .show();
+                    if let Ok(Some(path)) = path {
+                        println!("Selected folder path: {}", path.display());
+                        // Save the selected path to configuration
+                        if let Err(e) = config_manager.update_pokerstars_path(path.to_string_lossy().to_string()) {
+                            println!("Failed to save path to config: {}", e);
+                        } else {
+                            println!("Path saved to configuration successfully");
+                        }
+                    } else {
+                        println!("No folder selected");
                     }
                 }
                 AppCommand::Exit => {
@@ -1258,6 +1271,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn load_icon(path: &std::path::Path) -> tray_icon::Icon {
+    println!("Loading icon from path: {}", path.display());
     let (icon_rgba, icon_width, icon_height) = {
         let current_path = std::env::current_dir().unwrap();
         let image = image::open(path)

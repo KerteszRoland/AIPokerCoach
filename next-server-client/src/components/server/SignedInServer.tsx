@@ -1,5 +1,4 @@
-import authOptions from "@/app/api/auth/[...nextauth]/options";
-import { getServerSession } from "next-auth";
+import { getSession } from "@/server/getSession";
 import { ReactNode } from "react";
 
 export default async function SignedInServer({
@@ -7,7 +6,7 @@ export default async function SignedInServer({
 }: {
   children: ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
 
   if (!session) {
     return null;

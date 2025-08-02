@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth";
-import authOptions from "@/app/api/auth/[...nextauth]/options";
 import { redirect } from "next/navigation";
+import { getSession } from "./getSession";
 
 export default async function getSessionOrRedirect() {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
 
-  if (!session) {
+  if (!session || !session.userId) {
     return redirect("/api/auth/signin");
   }
 

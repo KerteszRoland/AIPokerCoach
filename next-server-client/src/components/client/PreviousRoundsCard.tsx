@@ -3,12 +3,12 @@
 import { getChartHandFromCards } from "@/config/chart";
 import Card from "../server/Card";
 import { Card as CardType } from "@/config/card";
-import { useGetHands } from "@/hooks/useHands";
 import { useEffect, useRef } from "react";
 import { Position } from "@/config/position";
 import Button from "./Button";
 import { FaArrowRight } from "react-icons/fa";
 import { HandFull } from "@/server/serverRequests/hand";
+import { useGetHandsSocket } from "@/hooks/useGetHandsSocket";
 
 export default function PreviousRoundsCard({
   hands: initialHands,
@@ -16,10 +16,8 @@ export default function PreviousRoundsCard({
   hands: HandFull[];
 }) {
   const scrollableContentRef = useRef<HTMLDivElement>(null);
-  const { data: hands } = useGetHands({
-    page: 0,
-    pageSize: 30,
-    initialData: initialHands,
+  const { hands } = useGetHandsSocket({
+    initialHands,
   });
 
   useEffect(() => {
@@ -131,7 +129,7 @@ function PreviousRoundPosition({ position }: { position: Position | null }) {
     return null;
   }
   return (
-    <div className="w-min border border-gray-200 rounded-md p-2 min-w-[80px] text-center bg-black">
+    <div className="w-min border border-gray-200 rounded-md p-2 min-w-[80px] text-center bg-foreground text-background">
       {`${position}`}
     </div>
   );

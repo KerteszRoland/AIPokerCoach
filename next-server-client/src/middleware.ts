@@ -34,12 +34,6 @@ export default withAuth(
       authorized: async ({ token, req }) => {
         const loggedIn = !!token;
         const { pathname } = req.nextUrl;
-        console.log(pathname);
-        console.log("isApiRoute", isApiRoute(pathname));
-        console.log("isPublicRoute", isPublicRoute(pathname));
-        console.log("isLoggedInRoute", isLoggedInRoute(pathname));
-        console.log("token", token);
-        console.log("redirecting to login");
         if (isApiRoute(pathname) || isPublicRoute(pathname)) {
           return true;
         }

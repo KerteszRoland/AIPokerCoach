@@ -1,4 +1,3 @@
-use std::env;
 use std::error::Error;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -7,10 +6,10 @@ use keyring::Entry;
 use reqwest;
 use serde::Deserialize;
 use serde_json;
-use dotenv::dotenv;
 
 const KEYRING_SERVICE: &str = "ai-poker-coach";
 const KEYRING_USER: &str = "access_token";
+const BACKEND_URL: &str = "http://localhost:3000";
 
 pub fn store_access_token(token: &str) -> Result<(), Box<dyn Error>> {
     let entry = Entry::new(KEYRING_SERVICE, KEYRING_USER)?;
@@ -59,13 +58,10 @@ pub fn is_authenticated() -> bool {
 }
 
 pub async fn start_login_flow() -> Result<(), Box<dyn Error>> {
-    dotenv::dotenv().ok();
-    
     // Clear any existing token before starting new login flow
     clear_access_token().ok(); // Ignore errors if no token exists
     
-    let backend_url = env::var("BACKEND_URL").expect("Missing the BACKEND_URL environment variable.");
-    let nextjs_exchange_url = format!("{}/api/rust-client", backend_url);
+    let nextjs_exchange_url = format!("{}/api/rust-client", BACKEND_URL);
     
     println!("Opening browser for authentication...");
     webbrowser::open(&nextjs_exchange_url)?;

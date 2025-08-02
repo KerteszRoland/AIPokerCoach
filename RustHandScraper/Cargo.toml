@@ -1,20 +1,23 @@
 [package]
 name = "RustHandScraper"
-version = "0.1.0"
+version = "1.0.8"
 edition = "2024"
+authors = ["Kertesz Roland"]
 
 [dependencies]
 chrono = "0.4.41"
+dirs = "5.0"
 dotenv = "0.15.0"
 eframe = "0.30.0"
 egui = "0.30.0"
 ehttp = "0.5.0"
 image = "0.25.0"
 keyring = { version = "3.6.2", features = ["windows-native"] }
+native-dialog = "0.9.0"
 oauth2 = { version="5.0.0", features = ["reqwest", "rustls-tls","reqwest-blocking"]}
 regex = "1.11.1"
 reqwest = { version = "0.11", features = ["json"] }
-serde = "1.0.219"
+serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1", features = ["full"] }
 tray-icon = "0.21.0"
@@ -25,3 +28,6 @@ winreg = "0.55.0"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser"] }
+
+[build-dependencies]
+cargo-wix = "0.3.0"
