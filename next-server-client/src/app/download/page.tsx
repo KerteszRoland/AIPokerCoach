@@ -1,11 +1,14 @@
-import { redirect } from "next/navigation";
+interface GithubAsset {
+  name: string;
+  browser_download_url: string;
+}
 
 export default async function DownloadPage() {
   const response = await fetch(
     "https://api.github.com/repos/KerteszRoland/AIPokerCoach/releases/latest"
   );
   const data = await response.json();
-  const downloadLink = data.assets.find((asset: any) =>
+  const downloadLink = data.assets.find((asset: GithubAsset) =>
     asset.name.endsWith(".msi")
   ).browser_download_url;
 
@@ -16,7 +19,7 @@ export default async function DownloadPage() {
         Your download should start automatically...
       </p>
       <p className="text-sm text-foreground">
-        If it doesn't start,{" "}
+        If it doesn&apos;t start,{" "}
         <a href={downloadLink} className="text-blue-500 hover:underline">
           click here
         </a>
