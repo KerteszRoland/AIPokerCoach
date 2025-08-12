@@ -9,7 +9,12 @@ use serde_json;
 
 const KEYRING_SERVICE: &str = "ai-poker-coach";
 const KEYRING_USER: &str = "access_token";
-const BACKEND_URL: &str = "http://localhost:3000";
+
+const BACKEND_URL: &str = if cfg!(debug_assertions) {
+    "http://localhost:3000"
+} else {
+    "https://ai-poker-coach.vercel.app"
+};
 
 pub fn store_access_token(token: &str) -> Result<(), Box<dyn Error>> {
     let entry = Entry::new(KEYRING_SERVICE, KEYRING_USER)?;
@@ -61,7 +66,7 @@ pub async fn start_login_flow() -> Result<(), Box<dyn Error>> {
     // Clear any existing token before starting new login flow
     clear_access_token().ok(); // Ignore errors if no token exists
     
-    let nextjs_exchange_url = format!("{}/api/rust-client", BACKEND_URL);
+    let nextjs_exchange_url = format!("{}/rust-client/signin", BACKEND_URL);
     
     println!("Opening browser for authentication...");
     webbrowser::open(&nextjs_exchange_url)?;

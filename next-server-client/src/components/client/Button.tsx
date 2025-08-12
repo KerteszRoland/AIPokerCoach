@@ -24,18 +24,14 @@ export default function Button({
 )) {
   if (href) {
     return (
-      <ButtonShad
-        asChild={asChild}
-        className={`cursor-pointer ${className ?? ""}`}
-        variant={variant}
-      >
-        <Link
-          href={href}
-          {...(props as AnchorHTMLAttributes<HTMLAnchorElement>)}
+      <Link href={href} {...(props as AnchorHTMLAttributes<HTMLAnchorElement>)}>
+        <ButtonShad
+          className={`cursor-pointer ${className ?? ""}`}
+          variant={variant}
         >
           {children}
-        </Link>
-      </ButtonShad>
+        </ButtonShad>
+      </Link>
     );
   }
 

@@ -16,7 +16,11 @@ use winreg::{RegKey, enums::HKEY_CLASSES_ROOT};
 
 use crate::auth::{clear_access_token, GoogleUserInfo};
 
-const BACKEND_URL: &str = "http://localhost:3000";
+const BACKEND_URL: &str = if cfg!(debug_assertions) {
+    "http://localhost:3000"
+} else {
+    "https://ai-poker-coach.vercel.app"
+};
 
 #[derive(Debug, Clone)]
 enum Position {
